@@ -270,3 +270,53 @@ void l22::postfix_writer::do_if_else_node(l22::if_else_node * const node, int lv
   node->elseblock()->accept(this, lvl + 2);
   _pf.LABEL(mklbl(lbl1 = lbl2));
 }
+
+//---------------------------------------------------------------------------
+
+void l22::postfix_writer::do_nullptr_node(l22::nullptr_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_function_call_node(l22::function_call_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_block_node(l22::block_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_stop_node(l22::stop_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_again_node(l22::again_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_return_node(l22::return_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_index_node(l22::index_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_stack_alloc_node(l22::stack_alloc_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_address_of_node(l22::address_of_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_sizeof_node(l22::sizeof_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::postfix_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
+  // EMPTY
+}
