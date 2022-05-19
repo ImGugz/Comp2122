@@ -317,6 +317,6 @@ void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node
   // EMPTY
 }
 
-void l22::postfix_writer::do_function_node(l22::function_node * const node, int lvl) {
+void l22::postfix_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
   // EMPTY
 }

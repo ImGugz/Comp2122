@@ -5,17 +5,17 @@
 
 namespace l22 {
 
-  class function_node: public cdk::expression_node {
+  class function_definition_node: public cdk::expression_node {
     cdk::sequence_node *_arguments;
     l22::block_node *_block;
 
   public:
-    function_node(int lineno, cdk::sequence_node *arguments, l22::block_node *block) :
+    function_definition_node(int lineno, cdk::sequence_node *arguments, l22::block_node *block) :
         cdk::expression_node(lineno), _arguments(arguments), _block(block) {
       type(cdk::primitive_type::create(0, cdk::TYPE_VOID));
     }
 
-    function_node(int lineno, std::shared_ptr<cdk::basic_type> funType, cdk::sequence_node *arguments, l22::block_node *block) :
+    function_definition_node(int lineno, std::shared_ptr<cdk::basic_type> funType, cdk::sequence_node *arguments, l22::block_node *block) :
         cdk::expression_node(lineno), _arguments(arguments), _block(block) {
       type(funType);
     }
@@ -32,7 +32,7 @@ namespace l22 {
     }
 
     void accept(basic_ast_visitor *sp, int level) {
-      sp->do_function_node(this, level);
+      sp->do_function_definition_node(this, level);
     }
 
   };
