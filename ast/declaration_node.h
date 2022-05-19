@@ -21,7 +21,7 @@ namespace l22 {
 
   public:
     bool constant() {
-      return false;  //DAVID: compatibility with the future
+      return false;  
     }
     int qualifier() {
       return _qualifier;
