@@ -312,3 +312,7 @@ void l22::postfix_writer::do_address_of_node(l22::address_of_node * const node, 
 void l22::postfix_writer::do_sizeof_node(l22::sizeof_node * const node, int lvl) {
   // EMPTY
 }
+
+void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node, int lvl) {
+  // EMPTY
+}
