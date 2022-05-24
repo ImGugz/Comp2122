@@ -161,19 +161,19 @@ void l22::type_checker::do_evaluation_node(l22::evaluation_node *const node, int
   node->argument()->accept(this, lvl + 2);
 }
 
-void l22::type_checker::do_print_node(l22::print_node *const node, int lvl) {
-  node->argument()->accept(this, lvl + 2);
-}
+// void l22::type_checker::do_print_node(l22::print_node *const node, int lvl) {
+//   node->argument()->accept(this, lvl + 2);
+// }
 
 //---------------------------------------------------------------------------
 
-void l22::type_checker::do_read_node(l22::read_node *const node, int lvl) {
-  try {
-    node->argument()->accept(this, lvl);
-  } catch (const std::string &id) {
-    throw "undeclared variable '" + id + "'";
-  }
-}
+// void l22::type_checker::do_read_node(l22::read_node *const node, int lvl) {
+//   try {
+//     node->argument()->accept(this, lvl);
+//   } catch (const std::string &id) {
+//     throw "undeclared variable '" + id + "'";
+//   }
+// }
 
 //---------------------------------------------------------------------------
 
@@ -238,5 +238,17 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
 }
 
 void l22::type_checker::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::type_checker::do_input_node(l22::input_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::type_checker::do_write_node(l22::write_node * const node, int lvl) {
+  // EMPTY
+}
+
+void l22::type_checker::do_identity_node(l22::identity_node * const node, int lvl) {
   // EMPTY
 }

@@ -9,7 +9,7 @@ namespace l22 {
     int _level;
 
   public:
-    stop_node(int lineno, int level = 1) :
+    stop_node(int lineno, int level) :
         cdk::basic_node(lineno), _level(level) {
     }
 

@@ -2,15 +2,13 @@
 #define __L22_AST_FUNCTION_CALL_H__
 
 #include <string>
-#include <cdk/ast/basic_node.h>
-#include <cdk/ast/sequence_node.h>
-#include <cdk/ast/nil_node.h>
 #include <cdk/ast/expression_node.h>
+#include <cdk/ast/sequence_node.h>
 
 namespace l22 {
 
   class function_call_node: public cdk::expression_node {
-    std::string _identifier;
+    cdk::expression_node *_identifier;
     cdk::sequence_node *_arguments;
 
   public:
@@ -19,19 +17,19 @@ namespace l22 {
      * An empty sequence is automatically inserted to represent
      * the missing arguments.
      */
-    function_call_node(int lineno, const std::string &identifier) :
+    function_call_node(int lineno, cdk::expression_node *identifier) :
         cdk::expression_node(lineno), _identifier(identifier), _arguments(new cdk::sequence_node(lineno)) {
     }
 
     /**
      * Constructor for a function call with arguments.
      */
-    function_call_node(int lineno, const std::string &identifier, cdk::sequence_node *arguments) :
-        cdk::expression_node(lineno), _identifier(identifier), _arguments(arguments) {
+    function_call_node(int lineno, cdk::expression_node *pointer, cdk::sequence_node *arguments) :
+        cdk::expression_node(lineno), _pointer(pointer), _arguments(arguments) {
     }
 
   public:
-    const std::string& identifier() {
+    cdk::expression_node* identifier() {
       return _identifier;
     }
     cdk::sequence_node* arguments() {
