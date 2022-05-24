@@ -24,8 +24,8 @@ namespace l22 {
     /**
      * Constructor for a function call with arguments.
      */
-    function_call_node(int lineno, cdk::expression_node *pointer, cdk::sequence_node *arguments) :
-        cdk::expression_node(lineno), _pointer(pointer), _arguments(arguments) {
+    function_call_node(int lineno, cdk::expression_node *identifier, cdk::sequence_node *arguments) :
+        cdk::expression_node(lineno), _identifier(identifier), _arguments(arguments) {
     }
 
   public:
