@@ -25,6 +25,7 @@
   //-- don't change *any* of these --- END!
 
   int                   i;	/* integer value */
+  int                   d;	/* double value */
   std::string          *s;	/* symbol name or string literal */
   cdk::basic_node      *node;	/* node pointer */
   cdk::sequence_node   *sequence;
@@ -32,18 +33,33 @@
   cdk::lvalue_node     *lvalue;
 };
 
+%token tNULL
+%token tVAR tUSE tPUBLIC tFOREIGN
+%token tINT_TYPE tREAL_TYPE tSTRING_TYPE tVOID_TYPE
+
+%token tIOTYPES tBEGIN tEND
+
+%token tIF tTHEN tELIF tELSE
+%token tWHILE tDO tBREAK tAGAIN tRETURN tWRITE tWRITELN
+
+%token tINPUT tSIZEOF
+
 %token <i> tINTEGER
+%token<d> tREAL
 %token <s> tIDENTIFIER tSTRING
-%token tWHILE tIF tPRINT tREAD tBEGIN tEND
 
 %nonassoc tIFX
-%nonassoc tELSE
+//%nonassoc tELSE
 
 %right '='
-%left tGE tLE tEQ tNE '>' '<'
+%left tOR
+%left tAND
+%right tNOT
+%left tNE tEQ
+%left '<' tLE tGE '>'
 %left '+' '-'
 %left '*' '/' '%'
-%nonassoc tUNARY
+%right tUNARY
 
 %type <node> stmt program
 %type <sequence> list
@@ -63,8 +79,8 @@ list : stmt	     { $$ = new cdk::sequence_node(LINE, $1); }
 	   ;
 
 stmt : expr ';'                         { $$ = new l22::evaluation_node(LINE, $1); }
- 	| tPRINT expr ';'                  { /* $$ = new l22::write_node(LINE, $2); */ }
-     | tREAD lval ';'                   { /* $$ = new l22::input_node(LINE, $2); */ }
+ 	// | tWRITE expr ';'                  { $$ = new l22::write_node(LINE, $2);  }
+     // | tINPUT lval ';'                   { $$ = new l22::input_node(LINE, $2); }
      | tWHILE '(' expr ')' stmt         { $$ = new l22::while_node(LINE, $3, $5); }
      | tIF '(' expr ')' stmt %prec tIFX { $$ = new l22::if_node(LINE, $3, $5); }
      | tIF '(' expr ')' stmt tELSE stmt { $$ = new l22::if_else_node(LINE, $3, $5, $7); }
