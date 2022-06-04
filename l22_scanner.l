@@ -37,7 +37,7 @@ inline bool isValidIndent(int indent) {
 LETTER       [A-Za-z]
 IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
-%x X_STRING X_COMMENT X_NEWLINE X_BACKSLASH X_NEXTSTR
+%x X_STRING X_COMMENT X_NEWLINE X_BACKSLASH
 
 %%
 
@@ -132,7 +132,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[                  3.5 - DATA TYPES                          ]==== */
   /* ====================================================================== */
 
-"null"                 return tNULL;
+"null"                 return tNULLPTR;
 
 "var"                  return tVAR;
 "use"                  return tUSE;
@@ -149,7 +149,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[              5 - FUNCTIONS                                 ]==== */
   /* ====================================================================== */
 
-[():@]                 return *yytext;
+[():@,]                return *yytext;
 "->"                   return tIOTYPES;
 "begin"                return tBEGIN; 
 "end"                  return tEND; 
@@ -171,9 +171,9 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 "while"                return tWHILE;
 "do:"                  return tDO;
 
-"break"                return tBREAK;
-
 "again"                return tAGAIN;
+
+"stop"                 return tSTOP;
 
 "return"               return tRETURN;
 
@@ -224,11 +224,16 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[              2.7.3 - STRINGS                               ]==== */
   /* ====================================================================== */
 
- /* NOTE: this does not allow for consecutive strings */
-"\""                           yy_push_state(X_STRING);
-<X_STRING>\\                   yy_push_state(X_BACKSLASH);
-<X_STRING>"\""                 yy_pop_state(); yy_push_state(X_NEXTSTR);
-<X_STRING>.                    strlit << *yytext;
+"\""                          yy_push_state(X_STRING);
+<X_STRING>\\                  yy_push_state(X_BACKSLASH);
+<X_STRING>"\""                {
+                                yylval.s = new std::string(strlit.str());
+                                strlit.str("");
+                                yy_pop_state();
+                                return tSTRING;
+                              }
+<X_STRING>.                   strlit << *yytext;
+                              
 
 <X_BACKSLASH>t                 strlit << '\t'; yy_pop_state();
 <X_BACKSLASH>n                 strlit << '\n'; yy_pop_state();
@@ -236,20 +241,12 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 <X_BACKSLASH>\"                strlit << '\"'; yy_pop_state();
 <X_BACKSLASH>\\                strlit << '\\'; yy_pop_state();
 
-<X_BACKSLASH>[0-6]{1,3} {
-                                 strlit << (char)(unsigned char)strtoul(yytext, NULL, 6);
+<X_BACKSLASH>[0-6]{1,3}        {
+                                 strlit << (char)(unsigned char)strtoul(yytext, NULL, 7);
                                  yy_pop_state();
                                }
 <X_BACKSLASH>.                 strlit << *yytext; yy_pop_state(); /* NOTE: why this? */
 
-<X_NEXTSTR>[ ]                ;
-<X_NEXTSTR>"\""               yy_pop_state(); yy_push_state(X_STRING);
-<X_NEXTSTR>.                  {
-                                 yylval.s = new std::string(strlit.str());
-                                 strlit.str("");
-                                 yy_pop_state();
-                                 return tSTRING;
-                               }
 
   /* ====================================================================== */
   /* ====[                    OTHER CHARACTERS                        ]==== */
