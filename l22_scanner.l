@@ -40,9 +40,9 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 %x X_STRING X_COMMENT X_NEWLINE X_BACKSLASH
 
 %%
-
    // NOTE: UNIFORMIZE THIS; but as of now, just make sure it works in the end
-   {
+   {    
+        std::cout << "Olha aqui" << std::endl;
         yydebug=1; set_debug(1);
         if (clear_blocks) {
           std::cerr << "POPPING BLOCKS (" << indents.size() << ")" << std::endl;
@@ -151,7 +151,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
 [():@,]                return *yytext;
 "->"                   return tIOTYPES;
-"begin"                return tBEGIN; 
+"begin"                std::cout << "Aqui aqui" << std::endl; return tBEGIN; 
 "end"                  return tEND; 
 
   /* ====================================================================== */
@@ -234,7 +234,6 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
                               }
 <X_STRING>.                   strlit << *yytext;
                               
-
 <X_BACKSLASH>t                 strlit << '\t'; yy_pop_state();
 <X_BACKSLASH>n                 strlit << '\n'; yy_pop_state();
 <X_BACKSLASH>r                 strlit << '\r'; yy_pop_state();
@@ -245,12 +244,20 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
                                  strlit << (char)(unsigned char)strtoul(yytext, NULL, 7);
                                  yy_pop_state();
                                }
-<X_BACKSLASH>.                 strlit << *yytext; yy_pop_state(); /* NOTE: why this? */
-
+<X_BACKSLASH>.                 strlit << *yytext; yy_pop_state(); 
 
   /* ====================================================================== */
   /* ====[                    OTHER CHARACTERS                        ]==== */
   /* ====================================================================== */
+
+<<EOF>>                {
+std::cout << "AT <<EOF>> OPEN INDENTS ARE " << indents.size() << std::endl;
+if (indents.size() > 0) {
+  indents.pop_back();
+  return '}';
+}
+return 0;  // nothing left to do: tell parser to proceed
+}
 
 [ ]                           /* ignore remaining white space inside the program */
 .                             yyerror(yytext);    /* all other chars: error! */

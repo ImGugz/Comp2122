@@ -92,8 +92,8 @@ file            : /* empty */              { compiler->ast($$ = new cdk::sequenc
                 | declarations program     { compiler->ast($$ = new cdk::sequence_node(LINE, $2, $1)); }
                 ;
 
-program	      : tBEGIN block tEND        { $$ = new l22::program_node(LINE, $2); }
-	           ;
+program	        : tBEGIN block tEND        { $$ = new l22::program_node(LINE, $2); }
+	              ;
 
 block           : '{'              opt_instructions '}' {
                 $$ = new l22::block_node(LINE, nullptr, $2);
@@ -120,7 +120,7 @@ declaration:   tPUBLIC type tIDENTIFIER '=' expr ';'  { $$ = new l22::declaratio
            |   tPUBLIC tIDENTIFIER '=' expr ';'       { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$2, $4); delete $2; }  
            |   tPUBLIC tVAR tIDENTIFIER '=' expr ';'  { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$3, $5); delete $3; }
             /* NOTE: is a declaration without 'var' allowed? */
-           |   tVAR tIDENTIFIER '=' expr ';'         { $$ = new l22::declaration_node(LINE, tPRIVATE, nullptr, *$2, $4); delete $2; }
+           |   tVAR tIDENTIFIER '=' expr ';'          { $$ = new l22::declaration_node(LINE, tPRIVATE, nullptr, *$2, $4); delete $2; }
            ;
 
 // TODO: try to optimize this at the end, this happens because last instruction of the block does not end in a ';'
@@ -155,6 +155,7 @@ elif            : tELSE block                           { $$ = $2; }
 type      :    tINT_TYPE                     { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);    }
           |    tREAL_TYPE                    { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE); }
           |    tSTRING_TYPE                  { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING); }
+          /* NOTE: see TYPE VOID for pointer */
           |    '[' tVOID_TYPE ']'            { $$ = cdk::reference_type::create(4, nullptr);          } 
           |    '[' type ']'                  { $$ = cdk::reference_type::create(4, $2);               }
           |    function_type                 { $$ = $1;                                               }
@@ -179,30 +180,33 @@ types          : type                        { $$ = new std::vector<std::shared_
 
 expr           : integer                          { $$ = $1; }
                | real                             { $$ = $1; }
-	          | string                           { $$ = new cdk::string_node(LINE, $1); }
+	             | string                           { $$ = new cdk::string_node(LINE, $1); }
                | tNULLPTR                         { $$ = new l22::nullptr_node(LINE); }
                | '(' expr ')'                     { $$ = $2; }
                | '[' expr ']'                     { $$ = new l22::stack_alloc_node(LINE, $2); }
                | lval '?'                         { $$ = new l22::address_of_node(LINE, $1); }  // NOTE: does this need precedence??
-               | '+' expr %prec tUNARY            { $$ = $2; }
+               | '+' expr %prec tUNARY            { $$ = new l22::identity_node(LINE, $2); }
                | '-' expr %prec tUNARY            { $$ = new cdk::neg_node(LINE, $2); }
-               | expr '+' expr	               { $$ = new cdk::add_node(LINE, $1, $3); }
-               | expr '-' expr	               { $$ = new cdk::sub_node(LINE, $1, $3); }
-               | expr '*' expr	               { $$ = new cdk::mul_node(LINE, $1, $3); }
-               | expr '/' expr	               { $$ = new cdk::div_node(LINE, $1, $3); }
-               | expr '%' expr	               { $$ = new cdk::mod_node(LINE, $1, $3); }
-               | expr '<' expr	               { $$ = new cdk::lt_node(LINE, $1, $3); }
-               | expr '>' expr	               { $$ = new cdk::gt_node(LINE, $1, $3); }
-               | expr tGE expr	               { $$ = new cdk::ge_node(LINE, $1, $3); }
+               | expr '+' expr	                  { $$ = new cdk::add_node(LINE, $1, $3); }
+               | expr '-' expr	                  { $$ = new cdk::sub_node(LINE, $1, $3); }
+               | expr '*' expr	                  { $$ = new cdk::mul_node(LINE, $1, $3); }
+               | expr '/' expr	                  { $$ = new cdk::div_node(LINE, $1, $3); }
+               | expr '%' expr	                  { $$ = new cdk::mod_node(LINE, $1, $3); }
+               | expr '<' expr	                  { $$ = new cdk::lt_node(LINE, $1, $3); }
+               | expr '>' expr	                  { $$ = new cdk::gt_node(LINE, $1, $3); }
+               | expr tGE expr	                  { $$ = new cdk::ge_node(LINE, $1, $3); }
                | expr tLE expr                    { $$ = new cdk::le_node(LINE, $1, $3); }
-               | expr tNE expr	               { $$ = new cdk::ne_node(LINE, $1, $3); }
-               | expr tEQ expr	               { $$ = new cdk::eq_node(LINE, $1, $3); }
+               | expr tNE expr	                  { $$ = new cdk::ne_node(LINE, $1, $3); }
+               | expr tEQ expr	                  { $$ = new cdk::eq_node(LINE, $1, $3); }
                | tNOT expr                        { $$ = new cdk::not_node(LINE, $2); }
                | expr tAND expr                   { $$ = new cdk::and_node(LINE, $1, $3); }
                | expr tOR expr                    { $$ = new cdk::or_node (LINE, $1, $3); }
                | lval                             { $$ = new cdk::rvalue_node(LINE, $1); }  
                | lval '=' expr                    { $$ = new cdk::assignment_node(LINE, $1, $3); }
                | '(' expr ')' '(' opt_exprs ')'   { $$ = new l22::function_call_node(LINE, $2, $5); }
+               | '@' '(' opt_exprs ')'            { $$ = new l22::function_call_node(LINE, nullptr, $3); }
+               // NOTE: check if pointer indexation is valid at parser level?
+               | lval '(' opt_exprs ')'           { $$ = new l22::function_call_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
                | fundef                           { $$ = $1; }
                | tSIZEOF '(' expr ')'             { $$ = new l22::sizeof_node(LINE, $3); }
                | tINPUT                           { $$ = new l22::input_node(LINE); }
@@ -212,8 +216,8 @@ opt_exprs      :  /* empty */                     { $$ = new cdk::sequence_node(
                |  exprs                           { $$ = $1; }
                ;
 
-exprs          : expr                            { $$ = new cdk::sequence_node(LINE, $1); }   
-               | exprs  ',' expr                 { $$ = new cdk::sequence_node(LINE, $3, $1); }
+exprs          : expr                             { $$ = new cdk::sequence_node(LINE, $1); }   
+               | exprs  ',' expr                  { $$ = new cdk::sequence_node(LINE, $3, $1); }
                ;
 
 /* NOTE: see 'return_type' also */
