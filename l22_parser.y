@@ -92,7 +92,7 @@ file            : /* empty */              { compiler->ast($$ = new cdk::sequenc
                 | declarations program     { compiler->ast($$ = new cdk::sequence_node(LINE, $2, $1)); }
                 ;
 
-program	      : tBEGIN block tEND           { $$ = new l22::program_node(LINE, $2); }
+program	      : tBEGIN block tEND        { $$ = new l22::program_node(LINE, $2); }
 	           ;
 
 block           : '{'              opt_instructions '}' {
@@ -112,18 +112,19 @@ opt_instructions:  /* empty */          { $$ = new cdk::sequence_node(LINE); }
                 ;
 
 // TODO: create new rule for optional attribution (this eliminates 2 productions here)
-declaration:   tPUBLIC type tIDENTIFIER '=' expr   { $$ = new l22::declaration_node(LINE, tPUBLIC, $2, *$3, $5); delete $3; }
-           |   tPUBLIC type tIDENTIFIER            { $$ = new l22::declaration_node(LINE, tPUBLIC, $2, *$3, nullptr); delete $3; }
-           |   type tIDENTIFIER '=' expr           { $$ = new l22::declaration_node(LINE, tPRIVATE, $1, *$2, $4); delete $2; }
-           |   type tIDENTIFIER                    { $$ = new l22::declaration_node(LINE, tPRIVATE, $1, *$2, nullptr); delete $2; }
-           |   tPUBLIC tIDENTIFIER '=' expr        { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$2, $4); delete $2; }  
-           |   tPUBLIC tVAR tIDENTIFIER '=' expr   { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$3, $5); delete $3; }
+// FIXME: what happens when the program only has declarations??
+declaration:   tPUBLIC type tIDENTIFIER '=' expr ';'  { $$ = new l22::declaration_node(LINE, tPUBLIC, $2, *$3, $5); delete $3; }
+           |   tPUBLIC type tIDENTIFIER ';'           { $$ = new l22::declaration_node(LINE, tPUBLIC, $2, *$3, nullptr); delete $3; }
+           |   type tIDENTIFIER '=' expr ';'          { $$ = new l22::declaration_node(LINE, tPRIVATE, $1, *$2, $4); delete $2; }
+           |   type tIDENTIFIER ';'                   { $$ = new l22::declaration_node(LINE, tPRIVATE, $1, *$2, nullptr); delete $2; }
+           |   tPUBLIC tIDENTIFIER '=' expr ';'       { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$2, $4); delete $2; }  
+           |   tPUBLIC tVAR tIDENTIFIER '=' expr ';'  { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$3, $5); delete $3; }
             /* NOTE: is a declaration without 'var' allowed? */
-           |   tIDENTIFIER '=' expr                { $$ = new l22::declaration_node(LINE, tPRIVATE, nullptr, *$1, $3); delete $1; }  
-           |   tVAR tIDENTIFIER '=' expr           { $$ = new l22::declaration_node(LINE, tPRIVATE, nullptr, *$2, $4); delete $2; }
+           |   tVAR tIDENTIFIER '=' expr ';'         { $$ = new l22::declaration_node(LINE, tPRIVATE, nullptr, *$2, $4); delete $2; }
            ;
 
 // TODO: try to optimize this at the end, this happens because last instruction of the block does not end in a ';'
+// FIXME: empty blocks????
 instructions    : instruction                     { $$ = new cdk::sequence_node(LINE, $1);     }
                 | blkinstr                        { $$ = new cdk::sequence_node(LINE, $1);     }
                 | instruction ';' instructions    { std::reverse($3->nodes().begin(), $3->nodes().end()); $$ = new cdk::sequence_node(LINE, $1, $3); std::reverse($$->nodes().begin(), $$->nodes().end()); }
@@ -211,8 +212,8 @@ opt_exprs      :  /* empty */                     { $$ = new cdk::sequence_node(
                |  exprs                           { $$ = $1; }
                ;
 
-exprs          : expr                             { $$ = new cdk::sequence_node(LINE, $1); }   
-               | exprs   exprs                    { $$ = new cdk::sequence_node(LINE, $2, $1); }
+exprs          : expr                            { $$ = new cdk::sequence_node(LINE, $1); }   
+               | exprs  ',' expr                 { $$ = new cdk::sequence_node(LINE, $3, $1); }
                ;
 
 /* NOTE: see 'return_type' also */
