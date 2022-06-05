@@ -6,14 +6,15 @@
             <declaration_node name='i' qualifier='private' type='integer'>
             <initializer>
                 <add_node>
-                  <function pointer>
-                      <function_definition_node' type='integer'>
-                      <arguments>
+                  <function_call_node>
+                    <function pointer>
+                      <function_definition_node return type='integer'>
+                        <arguments>
                           <sequence_node size='1'>
                             <declaration_node name='i' qualifier='private' type='integer'>
                             </declaration_node>
                           </sequence_node>
-                      </arguments>
+                        </arguments>
                         <block_node>
                           <declarations>
                           </declarations>
@@ -31,12 +32,12 @@
                           </instructions>
                         </block_node>
                       </function_definition_node>
-                  </function pointer>
-                  <arguments>
+                    </function pointer>
+                    <arguments>
                       <sequence_node size='1'>
                         <integer_node>0</integer_node>
                       </sequence_node>
-                  </arguments>
+                    </arguments>
                   </function_call_node>
                   <integer_node>1</integer_node>
                 </add_node>

@@ -42,7 +42,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 %%
    // NOTE: UNIFORMIZE THIS; but as of now, just make sure it works in the end
    {    
-        std::cout << "Olha aqui" << std::endl;
+
         yydebug=1; set_debug(1);
         if (clear_blocks) {
           std::cerr << "POPPING BLOCKS (" << indents.size() << ")" << std::endl;

@@ -1,7 +1,9 @@
 #include <string>
+#include <string>
 #include "targets/xml_writer.h"
 #include "targets/type_checker.h"
 #include ".auto/all_nodes.h"  // automatically generated
+#include <sstream>
 
 #include "l22_parser.tab.h"
 
@@ -10,10 +12,32 @@ static std::string qualifier_name(int qualifier) {
   if (qualifier == tPUBLIC) return "public";
   if (qualifier == tPRIVATE)
     return "private";
+  if (qualifier == tUSE)
+    return "use";
+  if (qualifier == tFOREIGN)
+    return "foreign";
   else
     return "unknown qualifier";
 }
 
+static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
+
+  std::shared_ptr<cdk::functional_type> aux = cdk::functional_type::cast(typed_node);
+  if (aux == nullptr) {
+    return cdk::to_string(typed_node);
+  } else {
+    std::ostringstream strlit;
+    strlit << cdk::to_string(aux->output(0))<< "<";
+    std::cout << strlit.str() << std::endl;
+    for (size_t i = 0; i < aux->input_length(); i++) {
+      strlit << cdk::to_string(aux->input(i));
+      std::cout << strlit.str() << std::endl;
+    }
+    strlit << ">";
+    std::cout << strlit.str() << std::endl;
+    return strlit.str();
+  }
+}
 //---------------------------------------------------------------------------
 
 void l22::xml_writer::do_nil_node(cdk::nil_node * const node, int lvl) {
@@ -222,15 +246,16 @@ void l22::xml_writer::do_nullptr_node(l22::nullptr_node * const node, int lvl) {
 
 void l22::xml_writer::do_function_call_node(l22::function_call_node * const node, int lvl) {
   
-  openTag("function pointer", lvl);
+  openTag(node, lvl);
+  openTag("function pointer", lvl + 2);
   if (node->identifier()) node->identifier()->accept(this, lvl + 4);
   // TODO: function recursive call??
   //else os() << std::string(lvl, ' ') << "<" << node->label() << " pointer='" << node->identifier() << "'>" << std::endl;
-  closeTag("function pointer", lvl);
+  closeTag("function pointer", lvl + 2);
 
-  openTag("arguments", lvl);
+  openTag("arguments", lvl + 2);
   if (node->arguments()) node->arguments()->accept(this, lvl + 4);
-  closeTag("arguments", lvl);
+  closeTag("arguments", lvl + 2);
   closeTag(node, lvl);
 }
 
@@ -295,8 +320,10 @@ void l22::xml_writer::do_sizeof_node(l22::sizeof_node * const node, int lvl) {
 }
 
 void l22::xml_writer::do_declaration_node(l22::declaration_node * const node, int lvl) {
+
+  /* provisory solution for 'var' types while the type checker is not finished */
   os() << std::string(lvl, ' ') << "<" << node->label() << " name='" << node->identifier() << "' qualifier='"
-      << qualifier_name(node->qualifier()) << "' type='" << cdk::to_string(node->type()) << "'>" << std::endl;
+      << qualifier_name(node->qualifier()) << "' type='" << (node->type() ? type_name(node->type()) : "var") << "'>" << std::endl;
 
   if (node->initializer()) {
     openTag("initializer", lvl);
@@ -309,13 +336,13 @@ void l22::xml_writer::do_declaration_node(l22::declaration_node * const node, in
 /* TODO: see stuff related to symbol tables?? */
 void l22::xml_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
   
-  os() << std::string(lvl, ' ') << "<" << node->label() << "' type='" << cdk::to_string(node->type()) << "'>" << std::endl;
+  os() << std::string(lvl, ' ') << "<" << node->label() << " return type='" << cdk::to_string(node->type()) << "'>" << std::endl;
 
-  openTag("arguments", lvl);
+  openTag("arguments", lvl + 2);
   if (node->arguments()) {
     node->arguments()->accept(this, lvl + 4);
   }
-  closeTag("arguments", lvl);
+  closeTag("arguments", lvl + 2);
   node->block()->accept(this, lvl + 2);
   closeTag(node, lvl);
 

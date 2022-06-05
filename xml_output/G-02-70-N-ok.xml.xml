@@ -8,7 +8,7 @@
             <write_node>
               <sequence_node size='1'>
                 <sizeof_node>
-                  <double_node>1</double_node>
+                  <double_node>1.1</double_node>
                 </sizeof_node>
               </sequence_node>
             </write_node>
