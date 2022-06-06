@@ -1,7 +1,7 @@
 <sequence_node size='2'>
   <declaration_node name='f' qualifier='private' type='var'>
-  <initializer>
-      <function_definition_node return type='pointer to integer'>
+    <initializer>
+      <function_definition_node return_type='pointer to integer'>
         <arguments>
           <sequence_node size='1'>
             <declaration_node name='p' qualifier='private' type='pointer to integer'>
@@ -37,17 +37,17 @@
           </instructions>
         </block_node>
       </function_definition_node>
-  </initializer>
+    </initializer>
   </declaration_node>
   <program_node>
       <block_node>
         <declarations>
           <sequence_node size='1'>
             <declaration_node name='p' qualifier='private' type='pointer to integer'>
-            <initializer>
+              <initializer>
                 <nullptr_node>
                 </nullptr_node>
-            </initializer>
+              </initializer>
             </declaration_node>
           </sequence_node>
         </declarations>

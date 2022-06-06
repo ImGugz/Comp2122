@@ -1,18 +1,18 @@
 <sequence_node size='2'>
   <declaration_node name='r' qualifier='private' type='double'>
-  <initializer>
+    <initializer>
       <double_node>61</double_node>
-  </initializer>
+    </initializer>
   </declaration_node>
   <program_node>
       <block_node>
         <declarations>
           <sequence_node size='1'>
             <declaration_node name='p' qualifier='private' type='pointer to double'>
-            <initializer>
+              <initializer>
                 <nullptr_node>
                 </nullptr_node>
-            </initializer>
+              </initializer>
             </declaration_node>
           </sequence_node>
         </declarations>

@@ -4,9 +4,9 @@
         <declarations>
           <sequence_node size='1'>
             <declaration_node name='y' qualifier='private' type='integer'>
-            <initializer>
+              <initializer>
                 <integer_node>1</integer_node>
-            </initializer>
+              </initializer>
             </declaration_node>
           </sequence_node>
         </declarations>
@@ -26,9 +26,9 @@
                   <declarations>
                     <sequence_node size='1'>
                       <declaration_node name='x' qualifier='private' type='integer'>
-                      <initializer>
+                        <initializer>
                           <integer_node>1</integer_node>
-                      </initializer>
+                        </initializer>
                       </declaration_node>
                     </sequence_node>
                   </declarations>

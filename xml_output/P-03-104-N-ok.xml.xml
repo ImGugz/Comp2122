@@ -6,15 +6,15 @@
         <declarations>
           <sequence_node size='3'>
             <declaration_node name='n' qualifier='private' type='integer'>
-            <initializer>
+              <initializer>
                 <integer_node>4</integer_node>
-            </initializer>
+              </initializer>
             </declaration_node>
             <declaration_node name='f' qualifier='private' type='pointer to integer'>
-            <initializer>
+              <initializer>
                 <nullptr_node>
                 </nullptr_node>
-            </initializer>
+              </initializer>
             </declaration_node>
             <declaration_node name='i' qualifier='private' type='integer'>
             </declaration_node>

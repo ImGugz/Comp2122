@@ -2,8 +2,8 @@
   <declaration_node name='g' qualifier='use' type='integer<string>'>
   </declaration_node>
   <declaration_node name='f' qualifier='private' type='var'>
-  <initializer>
-      <function_definition_node return type='integer'>
+    <initializer>
+      <function_definition_node return_type='integer'>
         <arguments>
           <sequence_node size='1'>
             <declaration_node name='s' qualifier='private' type='string'>
@@ -38,11 +38,11 @@
           </instructions>
         </block_node>
       </function_definition_node>
-  </initializer>
+    </initializer>
   </declaration_node>
   <declaration_node name='g' qualifier='private' type='var'>
-  <initializer>
-      <function_definition_node return type='integer'>
+    <initializer>
+      <function_definition_node return_type='integer'>
         <arguments>
           <sequence_node size='1'>
             <declaration_node name='n' qualifier='private' type='string'>
@@ -68,7 +68,7 @@
           </instructions>
         </block_node>
       </function_definition_node>
-  </initializer>
+    </initializer>
   </declaration_node>
   <program_node>
       <block_node>

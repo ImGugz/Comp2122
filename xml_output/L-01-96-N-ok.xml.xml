@@ -1,7 +1,7 @@
 <sequence_node size='2'>
   <declaration_node name='f' qualifier='private' type='var'>
-  <initializer>
-      <function_definition_node return type='integer'>
+    <initializer>
+      <function_definition_node return_type='integer'>
         <arguments>
           <sequence_node size='1'>
             <declaration_node name='i' qualifier='private' type='integer'>
@@ -57,6 +57,8 @@
                                 </rvalue_node>
                                 <function_call_node>
                                   <function pointer>
+                                    <recursive>
+                                    </recursive>
                                   </function pointer>
                                   <arguments>
                                     <sequence_node size='1'>
@@ -89,7 +91,7 @@
           </instructions>
         </block_node>
       </function_definition_node>
-  </initializer>
+    </initializer>
   </declaration_node>
   <program_node>
       <block_node>

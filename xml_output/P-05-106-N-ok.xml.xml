@@ -6,10 +6,10 @@
         <declarations>
           <sequence_node size='1'>
             <declaration_node name='p' qualifier='private' type='pointer to double'>
-            <initializer>
+              <initializer>
                 <nullptr_node>
                 </nullptr_node>
-            </initializer>
+              </initializer>
             </declaration_node>
           </sequence_node>
         </declarations>

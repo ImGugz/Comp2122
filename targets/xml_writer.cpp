@@ -38,6 +38,7 @@ static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
     return strlit.str();
   }
 }
+
 //---------------------------------------------------------------------------
 
 void l22::xml_writer::do_nil_node(cdk::nil_node * const node, int lvl) {
@@ -249,8 +250,7 @@ void l22::xml_writer::do_function_call_node(l22::function_call_node * const node
   openTag(node, lvl);
   openTag("function pointer", lvl + 2);
   if (node->identifier()) node->identifier()->accept(this, lvl + 4);
-  // TODO: function recursive call??
-  //else os() << std::string(lvl, ' ') << "<" << node->label() << " pointer='" << node->identifier() << "'>" << std::endl;
+  else { os() << std::string(lvl + 4, ' ') << "<recursive>" << std::endl <<  std::string(lvl + 4, ' ') << "</recursive>" << std::endl; }
   closeTag("function pointer", lvl + 2);
 
   openTag("arguments", lvl + 2);
@@ -326,9 +326,9 @@ void l22::xml_writer::do_declaration_node(l22::declaration_node * const node, in
       << qualifier_name(node->qualifier()) << "' type='" << (node->type() ? type_name(node->type()) : "var") << "'>" << std::endl;
 
   if (node->initializer()) {
-    openTag("initializer", lvl);
+    openTag("initializer", lvl + 2);
     node->initializer()->accept(this, lvl + 4);
-    closeTag("initializer", lvl);
+    closeTag("initializer", lvl + 2);
   }
   closeTag(node, lvl);
 }
@@ -336,7 +336,7 @@ void l22::xml_writer::do_declaration_node(l22::declaration_node * const node, in
 /* TODO: see stuff related to symbol tables?? */
 void l22::xml_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
   
-  os() << std::string(lvl, ' ') << "<" << node->label() << " return type='" << cdk::to_string(node->type()) << "'>" << std::endl;
+  os() << std::string(lvl, ' ') << "<" << node->label() << " return_type='" << cdk::to_string(node->type()) << "'>" << std::endl;
 
   openTag("arguments", lvl + 2);
   if (node->arguments()) {

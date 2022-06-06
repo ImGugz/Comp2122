@@ -1,8 +1,8 @@
 <sequence_node size='2'>
   <declaration_node name='x' qualifier='private' type='string'>
-  <initializer>
+    <initializer>
       <string_node>ola</string_node>
-  </initializer>
+    </initializer>
   </declaration_node>
   <program_node>
       <block_node>

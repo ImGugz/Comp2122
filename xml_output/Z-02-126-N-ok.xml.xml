@@ -4,12 +4,12 @@
         <declarations>
           <sequence_node size='1'>
             <declaration_node name='i' qualifier='private' type='integer'>
-            <initializer>
+              <initializer>
                 <add_node>
                   <integer_node>1</integer_node>
                   <function_call_node>
                     <function pointer>
-                      <function_definition_node return type='integer'>
+                      <function_definition_node return_type='integer'>
                         <arguments>
                           <sequence_node size='1'>
                             <declaration_node name='i' qualifier='private' type='integer'>
@@ -41,7 +41,7 @@
                     </arguments>
                   </function_call_node>
                 </add_node>
-            </initializer>
+              </initializer>
             </declaration_node>
           </sequence_node>
         </declarations>

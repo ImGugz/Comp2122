@@ -14,7 +14,8 @@
 #define yyerror LexerError
 
 static bool clear_blocks = false;         // flag for closing inner blocks when the outermost block is closed
-
+static bool endl_block = false;         // flag for sending ';' when blocks at the are closed at the end of instruction according
+                                  
 static int lLevelsToPop = 0;              // when an inner block is closed, see how many inner blocks to said block must be closed
 static std::vector<int> indents;          // known indentation levels
 
@@ -34,20 +35,30 @@ inline bool isValidIndent(int indent) {
 
 %}
 
+/* Follow symbols of blocks (this highly simplifies the grammar...) */
+ELIF         "elif" 
+THEN         "else:"  
+CLOSE        ")" 
+END          "end"
+COMMA        ","
+NOTCLOSE     [ ]*({ELIF}|{THEN}|{CLOSE}|{END}|{COMMA}) 
 LETTER       [A-Za-z]
 IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
-%x X_STRING X_COMMENT X_NEWLINE X_BACKSLASH
+%x X_STRING X_COMMENT X_NEWLINE X_BACKSLASH X_BLOCKCLOSE
 
 %%
    // NOTE: UNIFORMIZE THIS; but as of now, just make sure it works in the end
    {    
 
         yydebug=1; set_debug(1);
+        if (endl_block) {
+          yy_push_state(X_BLOCKCLOSE);
+        }
         if (clear_blocks) {
           std::cerr << "POPPING BLOCKS (" << indents.size() << ")" << std::endl;
           indents.pop_back();
-          if (indents.size() == 0) clear_blocks= false;
+          if (indents.size() == 0) { clear_blocks = false; endl_block = true; std::cout << "Block closed, checking things" << std::endl;}
           return '}';
         }
         else {
@@ -55,6 +66,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
             std::cerr << "POPPING BLOCKS (" << lLevelsToPop << ")" << std::endl;
             lLevelsToPop--;
             indents.pop_back();
+            if (lLevelsToPop == 0) { endl_block = true; std::cout << "Block closed, checking things" << std::endl;}
             return '}';
           }
         }
@@ -64,13 +76,17 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[                      3.2.2 - INDENTATION                   ]==== */
   /* ====================================================================== */
 
-\n                   yy_push_state(X_NEWLINE); 
+ /* peek into next token to see if seen block is a final statement block */
+<X_BLOCKCLOSE>{NOTCLOSE}   { endl_block = false; yyless(0); yy_pop_state(); std::cout << "Will not close because i saw " << *yytext << std::endl;}
+<X_BLOCKCLOSE>.|\n         { endl_block = false; yyless(0); yy_pop_state();  std::cout << "Will close because i saw " << *yytext << std::endl; return ';';}
 
-<X_NEWLINE>^[ ]+  {
+\n                       yy_push_state(X_NEWLINE); 
+
+<X_NEWLINE>^[ ]+ {
     yy_pop_state();
-
     if (isValidIndent(yyleng)) {                                    // if a block was closed
-          // std::cerr << "CASE 1" << std::endl;
+          // NOTE: see this later
+          std::cerr << "CASE 1" << std::endl;
           if (lLevelsToPop == 0) {
             // instructions at the same block or empty block
             // std::cerr << "CASE 1a (levels to pop = 0)" << std::endl;
@@ -78,11 +94,12 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
           }
           else {
             // an indentation block has been closed, send closing block token to parser
-            // std::cerr << "CASE 1b (levels to pop = " << lLevelsToPop << ")" << std::endl;
+            std::cerr << "CASE 1b (levels to pop = " << lLevelsToPop << ")" << std::endl;
             if (lLevelsToPop > 0) {
               // std::cerr << "POPPING LEVELS (" << lLevelsToPop << ")" << std::endl;
               lLevelsToPop--;
               indents.pop_back();
+              if (lLevelsToPop == 0) { endl_block = true; std::cout << "Block closed, checking things" << std::endl; }
               return '}';
             }
           }
@@ -101,25 +118,31 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
 <X_NEWLINE>\n      ;    // ignore successive newline chars
 <X_NEWLINE>.       {   
-  // outermost block has been closed 
-  yyless(0);
+  std::cerr << "CASE 4 (levels to pop = " << lLevelsToPop << ")" << std::endl;
   yy_pop_state();
+  yyless(0);
+  // outermost block has been closed 
   if (indents.size() > 0) {
+    std::cerr << " more indentations " << std::endl;
     std::cerr << "should restart " << indents.size() << " functions at " << yylineno << std::endl;
     indents.pop_back();
     if (indents.size() > 0) { clear_blocks = true; }
+    else { endl_block = true; std::cout << "Block closed, checking things" << std::endl; }
     return '}';
   }
-  else return ';'; // top-level declarations
+  else {
+    std::cerr << " no further indentations " << std::endl;
+    return ';'; // top-level declarations
+  }
 }
 
   /* ====================================================================== */
   /* ====[                      3.3 - COMMENTS                        ]==== */
   /* ====================================================================== */
 
-[ ]*"..."\n            ;  /* ignore continuation marks */
+[ ]*"..."\n           
 
-";".*\n                ; /* ignore explicative comments */
+";".*\n                { yyless(yyleng - 1); };  /* ignore continuation marks */
 
 "(*"                   yy_push_state(X_COMMENT);
 <X_COMMENT>"(*"        yy_push_state(X_COMMENT);

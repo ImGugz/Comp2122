@@ -55,11 +55,11 @@
 %token<d> tREAL
 %token <s> tIDENTIFIER tSTRING
 
-%type <node> instruction blkinstr elif
+%type <node> instruction  elif
 %type <program> program
 %type <decl> declaration var
 %type <sequence> file declarations opt_instructions instructions opt_exprs exprs opt_vars vars
-%type <expression> expr integer real opt_expr expr_assignment blockexpr semicexpr
+%type <expression> expr integer real opt_expr
 %type <lvalue> lval 
 %type <block> block
 %type <vartype> type function_type return_type
@@ -94,6 +94,7 @@ file            : /* empty */              { compiler->ast($$ = new cdk::sequenc
                 | declarations program     { compiler->ast($$ = new cdk::sequence_node(LINE, $2, $1)); }
                 ;
 
+// Artifice: since all intruction-ending blocks are followed by ';', to this here for uniformity reasons */
 program	        : tBEGIN block tEND        { $$ = new l22::program_node(LINE, $2); }
 	              ;
 
@@ -114,11 +115,11 @@ opt_instructions:  /* empty */          { $$ = new cdk::sequence_node(LINE); }
                 ;
 
 // FIXME: what happens when the program only has declarations??
-declaration:   qualifier type tIDENTIFIER opt_expr          { $$ = new l22::declaration_node(LINE, $1, $2, *$3, $4); delete $3; }
-           |             type tIDENTIFIER opt_expr          { $$ = new l22::declaration_node(LINE, tPRIVATE, $1, *$2, $3); delete $2; }
-           |   tPUBLIC        tIDENTIFIER expr_assignment   { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$2, $3); delete $2; }  
-           |   qualifier tVAR tIDENTIFIER expr_assignment   { $$ = new l22::declaration_node(LINE, $1, nullptr, *$3, $4); delete $3; }
-           |             tVAR tIDENTIFIER expr_assignment   { $$ = new l22::declaration_node(LINE, tPRIVATE, nullptr, *$2, $3); delete $2; }
+declaration:   qualifier type tIDENTIFIER opt_expr       { $$ = new l22::declaration_node(LINE, $1, $2, *$3, $4); delete $3; }
+           |             type tIDENTIFIER opt_expr       { $$ = new l22::declaration_node(LINE, tPRIVATE, $1, *$2, $3); delete $2; }
+           |   tPUBLIC        tIDENTIFIER '=' expr ';'   { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$2, $4); delete $2; }  
+           |   qualifier tVAR tIDENTIFIER '=' expr ';'   { $$ = new l22::declaration_node(LINE, $1, nullptr, *$3, $5); delete $3; }
+           |             tVAR tIDENTIFIER '=' expr ';'   { $$ = new l22::declaration_node(LINE, tPRIVATE, nullptr, *$2, $4); delete $2; }
            ;
 
 qualifier  :  tPUBLIC                                 { $$ = tPUBLIC; }
@@ -127,20 +128,13 @@ qualifier  :  tPUBLIC                                 { $$ = tPUBLIC; }
            ;
 
 opt_expr   :  ';'                                     { $$ = nullptr; }
-           |  expr_assignment                         { $$ = $1; }
+           |  '=' expr ';'                         { $$ = $2; }
            ; 
-
-expr_assignment :  '=' semicexpr ';'                  { $$ = $2; }
-                |  '=' blockexpr                      { $$ = $2; }
-                ;
-                
 
 // TODO: try to optimize this at the end, this happens because last instruction of the block does not end in a ';'
 // FIXME: empty blocks????
 instructions    : instruction                     { $$ = new cdk::sequence_node(LINE, $1);     }
-                | blkinstr                        { $$ = new cdk::sequence_node(LINE, $1);     }
                 | instruction ';' instructions    { std::reverse($3->nodes().begin(), $3->nodes().end()); $$ = new cdk::sequence_node(LINE, $1, $3); std::reverse($$->nodes().begin(), $$->nodes().end()); }
-                | blkinstr instructions           { std::reverse($2->nodes().begin(), $2->nodes().end()); $$ = new cdk::sequence_node(LINE, $1, $2); std::reverse($$->nodes().begin(), $$->nodes().end()); }
                 ;
 
 instruction :  expr                               { $$ = new l22::evaluation_node(LINE, $1); }
@@ -150,18 +144,16 @@ instruction :  expr                               { $$ = new l22::evaluation_nod
             |  tSTOP                              { $$ = new l22::stop_node(LINE); }
             |  tRETURN                            { $$ = new l22::return_node(LINE); }
             |  tRETURN expr                       { $$ = new l22::return_node(LINE, $2); }
+            |  tIF '(' expr ')' tTHEN block       { $$ = new l22::if_node(LINE, $3, $6); }
+            |  tIF '(' expr ')' tTHEN block elif  { $$ = new l22::if_else_node(LINE, $3, $6, $7); }
+            |  tWHILE '(' expr ')' tDO block      { $$ = new l22::while_node(LINE, $3, $6); }
+            |  block                              { $$ = $1; }
             ;
 
-// NOTE: these block instructions do not allow for empty if-then-else's and while's!
-blkinstr        : tIF '(' expr ')' tTHEN block          { $$ = new l22::if_node(LINE, $3, $6); }
-                | tIF '(' expr ')' tTHEN block elif     { $$ = new l22::if_else_node(LINE, $3, $6, $7); }
-                | tWHILE '(' expr ')' tDO block         { $$ = new l22::while_node(LINE, $3, $6); }
-                | block                                 { $$ = $1; }
-                ;
-
-elif            : tELSE block                           { $$ = $2; }
-                | tELIF '(' expr ')' tTHEN block        { $$ = new l22::if_node(LINE, $3, $6); }
-                | tELIF '(' expr ')' tTHEN block elif   { $$ = new l22::if_else_node(LINE, $3, $6, $7); }
+elif        : tELSE block                           { $$ = $2; }
+            | tELIF '(' expr ')' tTHEN block        { $$ = new l22::if_node(LINE, $3, $6); }
+            | tELIF '(' expr ')' tTHEN block elif   { $$ = new l22::if_else_node(LINE, $3, $6, $7); }
+            ;
 
 /* NOTE: Is it the parser's responsibility to make sure void types are correctly used ?? */
 type      :    tINT_TYPE                     { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);    }
@@ -185,16 +177,12 @@ function_type  : tVOID_TYPE '<' '>'          { $$ = cdk::functional_type::create
 types          : type                        { $$ = new std::vector<std::shared_ptr<cdk::basic_type>>(); 
                                                $$->push_back($1); 
                                              }
-               | types type                  { $$ = $1; 
-                                               $$->push_back($2); 
+               | types ',' type              { $$ = $1; 
+                                               $$->push_back($3); 
                                              }
                ;
 
-expr           : semicexpr                        { $$ = $1; }
-               | blockexpr                        { $$ = $1; }
-               ;
-
-semicexpr      : integer                          { $$ = $1; }
+expr           : integer                          { $$ = $1; }
                | real                             { $$ = $1; }
 	             | string                           { $$ = new cdk::string_node(LINE, $1); }
                | tNULLPTR                         { $$ = new l22::nullptr_node(LINE); }
@@ -225,10 +213,7 @@ semicexpr      : integer                          { $$ = $1; }
                | lval '(' opt_exprs ')'           { $$ = new l22::function_call_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
                | tSIZEOF '(' expr ')'             { $$ = new l22::sizeof_node(LINE, $3); }
                | tINPUT                           { $$ = new l22::input_node(LINE); }
-               ;
-
-/* For scalability regarding block-type expressions */
-blockexpr      : fundef                           { $$ = $1; }
+               | fundef                           { $$ = $1; }
                ;
 
 opt_exprs      :  /* empty */                     { $$ = new cdk::sequence_node(LINE); }
@@ -240,6 +225,7 @@ exprs          : expr                             { $$ = new cdk::sequence_node(
                ;
 
 /* NOTE: see 'return_type' also */
+/* TODO: see this empty rule */
 fundef         : '(' opt_vars ')' tIOTYPES return_type ':' block      { $$ = new l22::function_definition_node(LINE, $5, $2, $7); }
                ;
 

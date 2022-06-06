@@ -1,8 +1,8 @@
 <sequence_node size='2'>
   <declaration_node name='x' qualifier='private' type='integer'>
-  <initializer>
+    <initializer>
       <integer_node>4</integer_node>
-  </initializer>
+    </initializer>
   </declaration_node>
   <program_node>
       <block_node>

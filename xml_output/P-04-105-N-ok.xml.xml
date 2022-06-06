@@ -2,23 +2,23 @@
   <declaration_node name='f' qualifier='private' type='pointer to double'>
   </declaration_node>
   <declaration_node name='d' qualifier='private' type='double'>
-  <initializer>
+    <initializer>
       <integer_node>4</integer_node>
-  </initializer>
+    </initializer>
   </declaration_node>
   <program_node>
       <block_node>
         <declarations>
           <sequence_node size='2'>
             <declaration_node name='i' qualifier='private' type='integer'>
-            <initializer>
+              <initializer>
                 <integer_node>0</integer_node>
-            </initializer>
+              </initializer>
             </declaration_node>
             <declaration_node name='j' qualifier='private' type='integer'>
-            <initializer>
+              <initializer>
                 <integer_node>0</integer_node>
-            </initializer>
+              </initializer>
             </declaration_node>
           </sequence_node>
         </declarations>
