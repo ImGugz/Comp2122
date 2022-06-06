@@ -14,8 +14,9 @@
 #define yyerror LexerError
 
 static bool clear_blocks = false;         // flag for closing inner blocks when the outermost block is closed
-static bool endl_block = false;         // flag for sending ';' when blocks at the are closed at the end of instruction according
-                                  
+static bool endl_block = false;           // flag to signal that we closed a block and should see if we a ';' must be sent
+static bool file_done = false;            // flag to avoid sending final ';' more than one time 
+
 static int lLevelsToPop = 0;              // when an inner block is closed, see how many inner blocks to said block must be closed
 static std::vector<int> indents;          // known indentation levels
 
@@ -37,20 +38,18 @@ inline bool isValidIndent(int indent) {
 
 /* Follow symbols of blocks (this highly simplifies the grammar...) */
 ELIF         "elif" 
-THEN         "else:"  
+ELSE         "else:"  
 CLOSE        ")" 
 END          "end"
 COMMA        ","
-NOTCLOSE     [ ]*({ELIF}|{THEN}|{CLOSE}|{END}|{COMMA}) 
+NOTCLOSE     [ ]*({ELIF}|{ELSE}|{CLOSE}|{END}|{COMMA}) 
 LETTER       [A-Za-z]
 IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
 %x X_STRING X_COMMENT X_NEWLINE X_BACKSLASH X_BLOCKCLOSE
 
 %%
-   // NOTE: UNIFORMIZE THIS; but as of now, just make sure it works in the end
    {    
-
         yydebug=1; set_debug(1);
         if (endl_block) {
           yy_push_state(X_BLOCKCLOSE);
@@ -76,7 +75,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[                      3.2.2 - INDENTATION                   ]==== */
   /* ====================================================================== */
 
- /* peek into next token to see if seen block is a final statement block */
+ /* peek into next token to see if seen block is a final statement block and therefore should be proceded by a semicolon */
 <X_BLOCKCLOSE>{NOTCLOSE}   { endl_block = false; yyless(0); yy_pop_state(); }
 <X_BLOCKCLOSE>.|\n         { endl_block = false; yyless(0); yy_pop_state(); return ';';}
 
@@ -85,7 +84,6 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 <X_NEWLINE>^[ ]+ {
     yy_pop_state();
     if (isValidIndent(yyleng)) {                                    // if a block was closed
-          // NOTE: see this later
           std::cerr << "CASE 1" << std::endl;
           if (lLevelsToPop == 0) {
             // instructions at the same block or empty block
@@ -124,7 +122,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   // outermost block has been closed 
   if (indents.size() > 0) {
     std::cerr << " more indentations " << std::endl;
-    std::cerr << "should restart " << indents.size() << " functions at " << yylineno << std::endl;
+    std::cerr << "should close " << indents.size() << " blocks at " << yylineno << std::endl;
     indents.pop_back();
     if (indents.size() > 0) { clear_blocks = true; }
     else { endl_block = true; }
@@ -140,9 +138,9 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[                      3.3 - COMMENTS                        ]==== */
   /* ====================================================================== */
 
-[ ]*"..."\n           
+[ ]*"..."\n            ;         
 
-";".*\n                { yyless(yyleng - 1); };  /* ignore continuation marks */
+";".*\n                { yyless(yyleng - 1); }  /* note that a new block can start after this type of comment  */
 
 "(*"                   yy_push_state(X_COMMENT);
 <X_COMMENT>"(*"        yy_push_state(X_COMMENT);
@@ -172,10 +170,10 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[              5 - FUNCTIONS                                 ]==== */
   /* ====================================================================== */
 
-[():@,]                return *yytext;
+[():@]|{COMMA}         return *yytext;
 "->"                   return tIOTYPES;
 "begin"                return tBEGIN; 
-"end"                  return tEND; 
+{END}                  return tEND; 
 
   /* ====================================================================== */
   /* ====[                 6.2 - CONDITIONAL INSTRUCTION              ]==== */
@@ -188,8 +186,8 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
 "if"                   return tIF; 
 "then:"                return tTHEN; 
-"elif"                 return tELIF; 
-"else:"                return tELSE; 
+{ELIF}                 return tELIF; 
+{ELSE}                 return tELSE; 
 
 "while"                return tWHILE;
 "do:"                  return tDO;
@@ -207,18 +205,18 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[                 7 - EXPRESSION OPERATORS                   ]==== */
   /* ====================================================================== */
 
-[\[\](),?]             return *yytext;
-[-+*/%<>?=]            return *yytext;
+[\[\](?]|{COMMA}|{CLOSE}   return *yytext;
+[-+*/%<>?=]                return *yytext;
 
-"=="                   return tEQ;
-"!="                   return tNE;
-"<="                   return tLE;
-">="                   return tGE;
-"not"                  return tNOT;
-"and"                  return tAND;
-"or"                   return tOR;
-"input"                return tINPUT;
-"sizeof"               return tSIZEOF;
+"=="                       return tEQ;
+"!="                       return tNE;
+"<="                       return tLE;
+">="                       return tGE;
+"not"                      return tNOT;
+"and"                      return tAND;
+"or"                       return tOR;
+"input"                    return tINPUT;
+"sizeof"                   return tSIZEOF;
 
   /* ====================================================================== */
   /* ====[                   3.9.1 - INTEGERS                         ]==== */
@@ -232,7 +230,6 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[                   2.7.2 - REAL NUMBERS                     ]==== */
   /* ====================================================================== */
 
- /* NOTE: This is different from the example compiler (those were not expressive enough) */
 [0-9]*\.[0-9]+([Ee][-+]?[0-9]+)?        { yylval.d = std::stod(yytext); return tREAL; }
 [0-9]+\.[0-9]*([Ee][-+]?[0-9]+)?        { yylval.d = std::stod(yytext); return tREAL; }
 [0-9]+([Ee][-+]?[0-9]+)                 { yylval.d = std::stod(yytext); return tREAL; }
@@ -274,10 +271,13 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====================================================================== */
 
 <<EOF>>                {
-std::cout << "AT <<EOF>> OPEN INDENTS ARE " << indents.size() << std::endl;
+std::cerr << "AT <<EOF>> OPEN INDENTS ARE " << indents.size() << std::endl;
 if (indents.size() > 0) {
   indents.pop_back();
   return '}';
+} else if (!file_done) {
+  file_done = true;
+  return ';';
 }
 return 0;  // nothing left to do: tell parser to proceed
 }

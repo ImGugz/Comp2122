@@ -3,7 +3,7 @@
     <block_node>
       <declarations>
         <sequence_node size='1'>
-          <declaration_node name='f' qualifier='private' type='void<>'>
+          <declaration_node name='f' qualifier='private' type='function with output void and inputs ()'>
           </declaration_node>
         </sequence_node>
       </declarations>

@@ -34,7 +34,7 @@
           <sequence_node size='2'>
             <declaration_node name='n' qualifier='private' type='integer'>
             </declaration_node>
-            <declaration_node name='fun' qualifier='private' type='integer<integer>'>
+            <declaration_node name='fun' qualifier='private' type='function with output integer and inputs (integer)'>
             </declaration_node>
           </sequence_node>
         </arguments>
@@ -72,9 +72,9 @@
           <sequence_node size='3'>
             <declaration_node name='n' qualifier='private' type='integer'>
             </declaration_node>
-            <declaration_node name='f1' qualifier='private' type='integer<integer>'>
+            <declaration_node name='f1' qualifier='private' type='function with output integer and inputs (integer)'>
             </declaration_node>
-            <declaration_node name='f2' qualifier='private' type='integer<integer>'>
+            <declaration_node name='f2' qualifier='private' type='function with output integer and inputs (integer)'>
             </declaration_node>
           </sequence_node>
         </arguments>

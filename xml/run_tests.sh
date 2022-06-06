@@ -2,7 +2,7 @@
 #which fritzing
 #!/usr/bin/
 for file in ../auto-tests/*; do
-  if [ ! -d "$file" ]; then
+ if [ ! -d "$file" ]; then
         filename=$(basename -- "$file")
         extension="${filename##*.}"
         filename="${filename%.*}"
@@ -16,6 +16,7 @@ for file in ../auto-tests/*; do
         extension="${filename##*.}"
         filename="${filename%.*}"
         if ! cmp -s "output/$filename.xml.xml" "expected/$filename.xml.xml" ; then
+          diff output/$filename.xml.xml expected/$filename.xml.xml
           echo "$filename is not ok!"
         fi
   fi

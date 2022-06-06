@@ -25,7 +25,7 @@
   //-- don't change *any* of these --- END!
 
   int                   i;	/* integer value */
-  double                   d;	/* double value */
+  double                d;	/* double value */
   std::string          *s;	/* symbol name or string literal */
   cdk::basic_node      *node;	/* node pointer */
   cdk::sequence_node   *sequence;
@@ -37,7 +37,6 @@
   std::shared_ptr<cdk::basic_type> vartype;
   std::vector<std::shared_ptr<cdk::basic_type>> *types;
   l22::function_definition_node *fndef;
-  yytokentype tok;
 };
 
 %token tNULLPTR
@@ -58,7 +57,7 @@
 %type <node> instruction  elif
 %type <program> program
 %type <decl> declaration var
-%type <sequence> file declarations opt_instructions instructions opt_exprs exprs opt_vars vars
+%type <sequence> file declarations instructions opt_exprs exprs opt_vars vars
 %type <expression> expr integer real opt_expr
 %type <lvalue> lval 
 %type <block> block
@@ -66,9 +65,7 @@
 %type <types> types
 %type <fndef> fundef
 %type <s> string
-%type <tok> qualifier
 
-/* NOTE: Check ambiguities regarding this later */
 %nonassoc tIF tWHILE
 %nonassoc tTHEN tDO
 %nonassoc tELIF tELSE
@@ -90,18 +87,23 @@
 %%
 
 file            : /* empty */              { compiler->ast($$ = new cdk::sequence_node(LINE)); }
+                | declarations             { compiler->ast($$ = $1); }
                 |              program     { compiler->ast($$ = new cdk::sequence_node(LINE, $1)); }
                 | declarations program     { compiler->ast($$ = new cdk::sequence_node(LINE, $2, $1)); }
                 ;
 
-program	        : tBEGIN block tEND        { $$ = new l22::program_node(LINE, $2); }
+/* program is considered a final-statement block instruction */
+program	        : tBEGIN block tEND ';'    { $$ = new l22::program_node(LINE, $2); }
 	              ;
 
-block           : '{'              opt_instructions '}' {
+block           : '{'              instructions '}' {
                 $$ = new l22::block_node(LINE, nullptr, $2);
                 }
-                | '{' declarations opt_instructions '}' {
+                | '{' declarations instructions '}' {
                 $$ = new l22::block_node(LINE, $2, $3);
+                }
+                |           /* empty */             {
+                $$ = new l22::block_node(LINE, nullptr, nullptr);
                 }
                 ;
 
@@ -109,27 +111,19 @@ declarations    :               declaration  { $$ = new cdk::sequence_node(LINE,
                 |  declarations declaration  { $$ = new cdk::sequence_node(LINE, $2, $1); }
                 ;
 
-opt_instructions:  /* empty */          { $$ = new cdk::sequence_node(LINE); }
-                |  instructions         { $$ = $1; }
-                ;
-
-declaration:   qualifier type tIDENTIFIER opt_expr       { $$ = new l22::declaration_node(LINE, $1, $2, *$3, $4); delete $3; }
+declaration:   tPUBLIC   type tIDENTIFIER opt_expr       { $$ = new l22::declaration_node(LINE, tPUBLIC, $2, *$3, $4); delete $3; }
            |             type tIDENTIFIER opt_expr       { $$ = new l22::declaration_node(LINE, tPRIVATE, $1, *$2, $3); delete $2; }
+           |   tUSE      type tIDENTIFIER ';'            { $$ = new l22::declaration_node(LINE, tUSE, $2, *$3, nullptr); delete $3; }
+           |   tFOREIGN  type tIDENTIFIER ';'            { $$ = new l22::declaration_node(LINE, tFOREIGN, $2, *$3, nullptr); delete $3; }
            |   tPUBLIC        tIDENTIFIER '=' expr ';'   { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$2, $4); delete $2; }  
-           |   qualifier tVAR tIDENTIFIER '=' expr ';'   { $$ = new l22::declaration_node(LINE, $1, nullptr, *$3, $5); delete $3; }
+           |   tPUBLIC   tVAR tIDENTIFIER '=' expr ';'   { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$3, $5); delete $3; }
            |             tVAR tIDENTIFIER '=' expr ';'   { $$ = new l22::declaration_node(LINE, tPRIVATE, nullptr, *$2, $4); delete $2; }
            ;
 
-qualifier  :  tPUBLIC                                 { $$ = tPUBLIC; }
-           |  tUSE                                    { $$ = tUSE; }
-           |  tFOREIGN                                { $$ = tFOREIGN; }
-           ;
-
 opt_expr   :  ';'                                     { $$ = nullptr; }
-           |  '=' expr ';'                         { $$ = $2; }
+           |  '=' expr ';'                            { $$ = $2; }
            ; 
 
-// FIXME: empty blocks????
 instructions    : instruction                     { $$ = new cdk::sequence_node(LINE, $1);     }
                 | instruction ';' instructions    { std::reverse($3->nodes().begin(), $3->nodes().end()); $$ = new cdk::sequence_node(LINE, $1, $3); std::reverse($$->nodes().begin(), $$->nodes().end()); }
                 ;
@@ -182,7 +176,7 @@ expr           : integer                          { $$ = $1; }
                | tNULLPTR                         { $$ = new l22::nullptr_node(LINE); }
                | '(' expr ')'                     { $$ = $2; }
                | '[' expr ']'                     { $$ = new l22::stack_alloc_node(LINE, $2); }
-               | lval '?'                         { $$ = new l22::address_of_node(LINE, $1); }  // NOTE: does this need precedence??
+               | lval '?'                         { $$ = new l22::address_of_node(LINE, $1); }  
                | '+' expr %prec tUNARY            { $$ = new l22::identity_node(LINE, $2); }
                | '-' expr %prec tUNARY            { $$ = new cdk::neg_node(LINE, $2); }
                | expr '+' expr	                  { $$ = new cdk::add_node(LINE, $1, $3); }
@@ -203,7 +197,6 @@ expr           : integer                          { $$ = $1; }
                | lval '=' expr                    { $$ = new cdk::assignment_node(LINE, $1, $3); }
                | '(' expr ')' '(' opt_exprs ')'   { $$ = new l22::function_call_node(LINE, $2, $5); }
                | '@' '(' opt_exprs ')'            { $$ = new l22::function_call_node(LINE, nullptr, $3); }
-               // NOTE: check if pointer indexation is valid at parser level?
                | lval '(' opt_exprs ')'           { $$ = new l22::function_call_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
                | tSIZEOF '(' expr ')'             { $$ = new l22::sizeof_node(LINE, $3); }
                | tINPUT                           { $$ = new l22::input_node(LINE); }
@@ -218,8 +211,8 @@ exprs          : expr                             { $$ = new cdk::sequence_node(
                | exprs  ',' expr                  { $$ = new cdk::sequence_node(LINE, $3, $1); }
                ;
 
-/* TODO: see this empty rule */
-fundef         : '(' opt_vars ')' tIOTYPES return_type ':' block      { $$ = new l22::function_definition_node(LINE, $5, $2, $7); }
+
+fundef         : '(' opt_vars ')' tIOTYPES return_type ':' block    { $$ = new l22::function_definition_node(LINE, $5, $2, $7); }
                ;
 
 opt_vars       :  /* empty */                    { $$ = new cdk::sequence_node(LINE); }

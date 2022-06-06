@@ -27,12 +27,12 @@ static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
     return cdk::to_string(typed_node);
   } else {
     std::ostringstream strlit;
-    strlit << cdk::to_string(aux->output(0))<< "<";
+    strlit << "function with output " << cdk::to_string(aux->output(0))<< " and inputs " << "(";
     for (size_t i = 0; i < aux->input_length(); i++) {
       strlit << type_name(aux->input(i)) << ",";
     }
     if (aux->input_length() > 0) strlit.seekp(-1, strlit.cur);
-    strlit << ">";
+    strlit << ")";
     return strlit.str();
   }
 }

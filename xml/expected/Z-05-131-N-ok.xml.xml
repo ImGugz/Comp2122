@@ -3,9 +3,9 @@
     <block_node>
       <declarations>
         <sequence_node size='2'>
-          <declaration_node name='f' qualifier='private' type='integer<integer>'>
+          <declaration_node name='f' qualifier='private' type='function with output integer and inputs (integer)'>
           </declaration_node>
-          <declaration_node name='g' qualifier='private' type='integer<integer>'>
+          <declaration_node name='g' qualifier='private' type='function with output integer and inputs (integer)'>
           </declaration_node>
         </sequence_node>
       </declarations>

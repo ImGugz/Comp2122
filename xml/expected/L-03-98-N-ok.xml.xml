@@ -1,5 +1,5 @@
 <sequence_node size='4'>
-  <declaration_node name='g' qualifier='use' type='integer<integer>'>
+  <declaration_node name='g' qualifier='use' type='function with output integer and inputs (integer)'>
   </declaration_node>
   <declaration_node name='f' qualifier='private' type='var'>
     <initializer>
