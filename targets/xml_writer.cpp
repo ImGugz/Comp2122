@@ -28,13 +28,11 @@ static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
   } else {
     std::ostringstream strlit;
     strlit << cdk::to_string(aux->output(0))<< "<";
-    std::cout << strlit.str() << std::endl;
     for (size_t i = 0; i < aux->input_length(); i++) {
-      strlit << cdk::to_string(aux->input(i));
-      std::cout << strlit.str() << std::endl;
+      strlit << type_name(aux->input(i)) << ",";
     }
+    if (aux->input_length() > 0) strlit.seekp(-1, strlit.cur);
     strlit << ">";
-    std::cout << strlit.str() << std::endl;
     return strlit.str();
   }
 }
@@ -147,7 +145,7 @@ void l22::xml_writer::do_variable_node(cdk::variable_node * const node, int lvl)
 void l22::xml_writer::do_rvalue_node(cdk::rvalue_node * const node, int lvl) {
   /* ASSERT_SAFE_EXPRESSIONS */
   openTag(node, lvl);
-  node->lvalue()->accept(this, lvl + 4);
+  node->lvalue()->accept(this, lvl + 2);
   closeTag(node, lvl);
 }
 
@@ -166,7 +164,7 @@ void l22::xml_writer::do_assignment_node(cdk::assignment_node * const node, int 
 
 void l22::xml_writer::do_program_node(l22::program_node * const node, int lvl) {
   openTag(node, lvl);
-  node->statements()->accept(this, lvl + 4);
+  node->statements()->accept(this, lvl + 2);
   closeTag(node, lvl);
 }
 
@@ -292,12 +290,12 @@ void l22::xml_writer::do_return_node(l22::return_node * const node, int lvl) {
 
 void l22::xml_writer::do_index_node(l22::index_node * const node, int lvl) {
   openTag(node, lvl);
-  openTag("base", lvl);
-  node->base()->accept(this, lvl + 2);
-  closeTag("base", lvl);
-  openTag("index", lvl);
-  node->index()->accept(this, lvl + 2);
-  closeTag("index", lvl);
+  openTag("base", lvl + 2);
+  node->base()->accept(this, lvl + 4);
+  closeTag("base", lvl + 2);
+  openTag("index", lvl + 2);
+  node->index()->accept(this, lvl + 4);
+  closeTag("index", lvl + 2);
   closeTag(node, lvl);
 }
 
@@ -333,10 +331,9 @@ void l22::xml_writer::do_declaration_node(l22::declaration_node * const node, in
   closeTag(node, lvl);
 }
 
-/* TODO: see stuff related to symbol tables?? */
 void l22::xml_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
   
-  os() << std::string(lvl, ' ') << "<" << node->label() << " return_type='" << cdk::to_string(node->type()) << "'>" << std::endl;
+  os() << std::string(lvl, ' ') << "<" << node->label() << " return_type='" << type_name(node->type()) << "'>" << std::endl;
 
   openTag("arguments", lvl + 2);
   if (node->arguments()) {
@@ -353,9 +350,8 @@ void l22::xml_writer::do_input_node(l22::input_node * const node, int lvl) {
   closeTag(node, lvl);
 }
 
-// NOTE: how to handle the writeln case?
 void l22::xml_writer::do_write_node(l22::write_node * const node, int lvl) {
-  openTag(node, lvl);
+  os() << std::string(lvl, ' ') << "<" << node->label() << " newline='" << (node->newline() ? "true" : "false") << "'>" << std::endl;
   node->arguments()->accept(this, lvl + 2);
   closeTag(node, lvl);
 }

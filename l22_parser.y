@@ -94,7 +94,6 @@ file            : /* empty */              { compiler->ast($$ = new cdk::sequenc
                 | declarations program     { compiler->ast($$ = new cdk::sequence_node(LINE, $2, $1)); }
                 ;
 
-// Artifice: since all intruction-ending blocks are followed by ';', to this here for uniformity reasons */
 program	        : tBEGIN block tEND        { $$ = new l22::program_node(LINE, $2); }
 	              ;
 
@@ -114,7 +113,6 @@ opt_instructions:  /* empty */          { $$ = new cdk::sequence_node(LINE); }
                 |  instructions         { $$ = $1; }
                 ;
 
-// FIXME: what happens when the program only has declarations??
 declaration:   qualifier type tIDENTIFIER opt_expr       { $$ = new l22::declaration_node(LINE, $1, $2, *$3, $4); delete $3; }
            |             type tIDENTIFIER opt_expr       { $$ = new l22::declaration_node(LINE, tPRIVATE, $1, *$2, $3); delete $2; }
            |   tPUBLIC        tIDENTIFIER '=' expr ';'   { $$ = new l22::declaration_node(LINE, tPUBLIC, nullptr, *$2, $4); delete $2; }  
@@ -131,7 +129,6 @@ opt_expr   :  ';'                                     { $$ = nullptr; }
            |  '=' expr ';'                         { $$ = $2; }
            ; 
 
-// TODO: try to optimize this at the end, this happens because last instruction of the block does not end in a ';'
 // FIXME: empty blocks????
 instructions    : instruction                     { $$ = new cdk::sequence_node(LINE, $1);     }
                 | instruction ';' instructions    { std::reverse($3->nodes().begin(), $3->nodes().end()); $$ = new cdk::sequence_node(LINE, $1, $3); std::reverse($$->nodes().begin(), $$->nodes().end()); }
@@ -155,17 +152,14 @@ elif        : tELSE block                           { $$ = $2; }
             | tELIF '(' expr ')' tTHEN block elif   { $$ = new l22::if_else_node(LINE, $3, $6, $7); }
             ;
 
-/* NOTE: Is it the parser's responsibility to make sure void types are correctly used ?? */
 type      :    tINT_TYPE                     { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);    }
           |    tREAL_TYPE                    { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE); }
           |    tSTRING_TYPE                  { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING); }
-          /* NOTE: see TYPE VOID for pointer */
           |    '[' tVOID_TYPE ']'            { $$ = cdk::reference_type::create(4, nullptr);          } 
           |    '[' type ']'                  { $$ = cdk::reference_type::create(4, $2);               }
           |    function_type                 { $$ = $1;                                               }
           ;
 
-/* NOTE: not quite sure of this construction... */
 function_type  : tVOID_TYPE '<' '>'          { $$ = cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_VOID)); }
                | tVOID_TYPE '<' types '>'    { $$ = cdk::functional_type::create(*$3, cdk::primitive_type::create(4, cdk::TYPE_VOID));
                                                delete $3;
@@ -224,7 +218,6 @@ exprs          : expr                             { $$ = new cdk::sequence_node(
                | exprs  ',' expr                  { $$ = new cdk::sequence_node(LINE, $3, $1); }
                ;
 
-/* NOTE: see 'return_type' also */
 /* TODO: see this empty rule */
 fundef         : '(' opt_vars ')' tIOTYPES return_type ':' block      { $$ = new l22::function_definition_node(LINE, $5, $2, $7); }
                ;

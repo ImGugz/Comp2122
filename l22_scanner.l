@@ -58,7 +58,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
         if (clear_blocks) {
           std::cerr << "POPPING BLOCKS (" << indents.size() << ")" << std::endl;
           indents.pop_back();
-          if (indents.size() == 0) { clear_blocks = false; endl_block = true; std::cout << "Block closed, checking things" << std::endl;}
+          if (indents.size() == 0) { clear_blocks = false; endl_block = true; }
           return '}';
         }
         else {
@@ -66,7 +66,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
             std::cerr << "POPPING BLOCKS (" << lLevelsToPop << ")" << std::endl;
             lLevelsToPop--;
             indents.pop_back();
-            if (lLevelsToPop == 0) { endl_block = true; std::cout << "Block closed, checking things" << std::endl;}
+            if (lLevelsToPop == 0) { endl_block = true; }
             return '}';
           }
         }
@@ -77,8 +77,8 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====================================================================== */
 
  /* peek into next token to see if seen block is a final statement block */
-<X_BLOCKCLOSE>{NOTCLOSE}   { endl_block = false; yyless(0); yy_pop_state(); std::cout << "Will not close because i saw " << *yytext << std::endl;}
-<X_BLOCKCLOSE>.|\n         { endl_block = false; yyless(0); yy_pop_state();  std::cout << "Will close because i saw " << *yytext << std::endl; return ';';}
+<X_BLOCKCLOSE>{NOTCLOSE}   { endl_block = false; yyless(0); yy_pop_state(); }
+<X_BLOCKCLOSE>.|\n         { endl_block = false; yyless(0); yy_pop_state(); return ';';}
 
 \n                       yy_push_state(X_NEWLINE); 
 
@@ -99,7 +99,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
               // std::cerr << "POPPING LEVELS (" << lLevelsToPop << ")" << std::endl;
               lLevelsToPop--;
               indents.pop_back();
-              if (lLevelsToPop == 0) { endl_block = true; std::cout << "Block closed, checking things" << std::endl; }
+              if (lLevelsToPop == 0) { endl_block = true; }
               return '}';
             }
           }
@@ -127,7 +127,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
     std::cerr << "should restart " << indents.size() << " functions at " << yylineno << std::endl;
     indents.pop_back();
     if (indents.size() > 0) { clear_blocks = true; }
-    else { endl_block = true; std::cout << "Block closed, checking things" << std::endl; }
+    else { endl_block = true; }
     return '}';
   }
   else {
@@ -174,7 +174,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
 [():@,]                return *yytext;
 "->"                   return tIOTYPES;
-"begin"                std::cout << "Aqui aqui" << std::endl; return tBEGIN; 
+"begin"                return tBEGIN; 
 "end"                  return tEND; 
 
   /* ====================================================================== */
