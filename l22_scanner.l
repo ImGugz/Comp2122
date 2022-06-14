@@ -14,8 +14,6 @@
 #define yyerror LexerError
 
 static bool clear_blocks = false;         // flag for closing inner blocks when the outermost block is closed
-static bool endl_block = false;           // flag to signal that we closed a block and should see if we a ';' must be sent
-static bool file_done = false;            // flag to avoid sending final ';' more than one time 
 
 static int lLevelsToPop = 0;              // when an inner block is closed, see how many inner blocks to said block must be closed
 static std::vector<int> indents;          // known indentation levels
@@ -36,28 +34,18 @@ inline bool isValidIndent(int indent) {
 
 %}
 
-/* Follow symbols of blocks (this highly simplifies the grammar...) */
-ELIF         "elif" 
-ELSE         "else:"  
-CLOSE        ")" 
-END          "end"
-COMMA        ","
-NOTCLOSE     [ ]*({ELIF}|{ELSE}|{CLOSE}|{END}|{COMMA}) 
 LETTER       [A-Za-z]
 IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
-%x X_STRING X_COMMENT X_NEWLINE X_BACKSLASH X_BLOCKCLOSE
+%x X_STRING X_COMMENT X_NEWLINE X_BACKSLASH
 
 %%
    {    
         yydebug=1; set_debug(1);
-        if (endl_block) {
-          yy_push_state(X_BLOCKCLOSE);
-        }
         if (clear_blocks) {
           std::cerr << "POPPING BLOCKS (" << indents.size() << ")" << std::endl;
           indents.pop_back();
-          if (indents.size() == 0) { clear_blocks = false; endl_block = true; }
+          if (indents.size() == 0) { clear_blocks = false; }
           return '}';
         }
         else {
@@ -65,7 +53,6 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
             std::cerr << "POPPING BLOCKS (" << lLevelsToPop << ")" << std::endl;
             lLevelsToPop--;
             indents.pop_back();
-            if (lLevelsToPop == 0) { endl_block = true; }
             return '}';
           }
         }
@@ -74,10 +61,6 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====================================================================== */
   /* ====[                      3.2.2 - INDENTATION                   ]==== */
   /* ====================================================================== */
-
- /* peek into next token to see if seen block is a final statement block and therefore should be proceded by a semicolon */
-<X_BLOCKCLOSE>{NOTCLOSE}   { endl_block = false; yyless(0); yy_pop_state(); }
-<X_BLOCKCLOSE>.|\n         { endl_block = false; yyless(0); yy_pop_state(); return ';';}
 
 \n                       yy_push_state(X_NEWLINE); 
 
@@ -97,7 +80,6 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
               // std::cerr << "POPPING LEVELS (" << lLevelsToPop << ")" << std::endl;
               lLevelsToPop--;
               indents.pop_back();
-              if (lLevelsToPop == 0) { endl_block = true; }
               return '}';
             }
           }
@@ -125,7 +107,6 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
     std::cerr << "should close " << indents.size() << " blocks at " << yylineno << std::endl;
     indents.pop_back();
     if (indents.size() > 0) { clear_blocks = true; }
-    else { endl_block = true; }
     return '}';
   }
   else {
@@ -170,10 +151,10 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[              5 - FUNCTIONS                                 ]==== */
   /* ====================================================================== */
 
-[():@]|{COMMA}         return *yytext;
+[():@,]                return *yytext;
 "->"                   return tIOTYPES;
 "begin"                return tBEGIN; 
-{END}                  return tEND; 
+"end"                  return tEND; 
 
   /* ====================================================================== */
   /* ====[                 6.2 - CONDITIONAL INSTRUCTION              ]==== */
@@ -186,8 +167,8 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
 "if"                   return tIF; 
 "then:"                return tTHEN; 
-{ELIF}                 return tELIF; 
-{ELSE}                 return tELSE; 
+"elif"                 return tELIF; 
+"else:"                return tELSE; 
 
 "while"                return tWHILE;
 "do:"                  return tDO;
@@ -205,7 +186,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[                 7 - EXPRESSION OPERATORS                   ]==== */
   /* ====================================================================== */
 
-[\[\](?]|{COMMA}|{CLOSE}   return *yytext;
+[\[\]()?,]                 return *yytext;
 [-+*/%<>?=]                return *yytext;
 
 "=="                       return tEQ;
@@ -275,10 +256,7 @@ std::cerr << "AT <<EOF>> OPEN INDENTS ARE " << indents.size() << std::endl;
 if (indents.size() > 0) {
   indents.pop_back();
   return '}';
-} else if (!file_done) {
-  file_done = true;
-  return ';';
-}
+} 
 return 0;  // nothing left to do: tell parser to proceed
 }
 
