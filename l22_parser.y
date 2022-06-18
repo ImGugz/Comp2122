@@ -79,6 +79,7 @@
 %left '+' '-'
 %left '*' '/' '%'
 %right tUNARY
+%left '(' '['
 
 
 %{
@@ -102,9 +103,9 @@ block           : '{'              instructions '}' {
                 | '{' declarations instructions '}' {
                 $$ = new l22::block_node(LINE, $2, $3);
                 }
-                //|           /* empty */             {
-                //$$ = new l22::block_node(LINE, nullptr, nullptr);
-                //}
+                | ';'                                {
+                $$ = new l22::block_node(LINE, nullptr, nullptr);
+                }
                 ;
 
 declarations    :               declaration  { $$ = new cdk::sequence_node(LINE, $1); }
@@ -194,9 +195,8 @@ simple_expr    : integer                          { $$ = $1; }
                | '[' expr ']'                     { $$ = new l22::stack_alloc_node(LINE, $2); }
                | lval '?'                         { $$ = new l22::address_of_node(LINE, $1); }  
                | lval                             { $$ = new cdk::rvalue_node(LINE, $1); }  
-               | '(' expr ')' '(' opt_exprs ')'   { $$ = new l22::function_call_node(LINE, $2, $5); }
+               | simple_expr  '(' opt_exprs ')'   { $$ = new l22::function_call_node(LINE, $1, $3); }
                | '@' '(' opt_exprs ')'            { $$ = new l22::function_call_node(LINE, nullptr, $3); }
-               | lval '(' opt_exprs ')'           { $$ = new l22::function_call_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
                | tSIZEOF '(' expr ')'             { $$ = new l22::sizeof_node(LINE, $3); }
                | tINPUT                           { $$ = new l22::input_node(LINE); }
                | '+' simple_expr %prec tUNARY     { $$ = new l22::identity_node(LINE, $2); }
@@ -224,6 +224,8 @@ simple_expr    : integer                          { $$ = $1; }
                | tNOT simple_expr                 { $$ = new cdk::not_node(LINE, $2); }
                | simple_expr tAND simple_expr     { $$ = new cdk::and_node(LINE, $1, $3); }
                | simple_expr tOR simple_expr      { $$ = new cdk::or_node (LINE, $1, $3); }
+               | block_expr tAND simple_expr     { $$ = new cdk::and_node(LINE, $1, $3); }
+               | block_expr tOR simple_expr      { $$ = new cdk::or_node (LINE, $1, $3); }
                | lval '=' simple_expr             { $$ = new cdk::assignment_node(LINE, $1, $3); }
                ;
 
@@ -252,6 +254,8 @@ block_expr     : '+' block_expr %prec tUNARY         { $$ = new l22::identity_no
                | tNOT block_expr                     { $$ = new cdk::not_node(LINE, $2); }
                | block_expr tAND block_expr          { $$ = new cdk::and_node(LINE, $1, $3); }
                | block_expr tOR block_expr           { $$ = new cdk::or_node (LINE, $1, $3); }
+               | simple_expr tAND block_expr     { $$ = new cdk::and_node(LINE, $1, $3); }
+               | simple_expr tOR block_expr      { $$ = new cdk::or_node (LINE, $1, $3); }
                | lval '=' block_expr                 { $$ = new cdk::assignment_node(LINE, $1, $3); }
                | fundef                              { $$ = $1; }
                ;   
@@ -298,8 +302,7 @@ string          : tSTRING                        { $$ = $1; }
                 ;
 
 lval :  tIDENTIFIER                     { $$ = new cdk::variable_node(LINE, $1); }
-     |  lval   '[' expr ']'             { $$ = new l22::index_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
-     |  '(' expr ')' '[' expr ']'       { $$ = new l22::index_node(LINE, $2, $5); }    
+     |  simple_expr  '[' expr ']'       { $$ = new l22::index_node(LINE, $1, $3); }    
      ;
 
 %%

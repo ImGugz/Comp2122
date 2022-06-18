@@ -203,9 +203,23 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====[                   3.9.1 - INTEGERS                         ]==== */
   /* ====================================================================== */
 
-0[0-6]+              yylval.i = strtoul(yytext, NULL, 7); return tINTEGER;
+0[0-6]+              {
+  try { 
+    yylval.i = std::stoul(yytext, NULL, 7); return tINTEGER;
+  } catch (const std::out_of_range& e) {
+    yyerror("Integer is out of range");
+  }
+}
+ 
 0[0-9]+              yyerror("Invalid base 7 number.");
-0|[1-9][0-9]*        yylval.i = strtoul(yytext, NULL, 10); return tINTEGER;
+0|[1-9][0-9]*         {
+  try { 
+    yylval.i = std::stoul(yytext, NULL, 10); 
+    return tINTEGER;
+  } catch (const std::out_of_range& e) {
+    yyerror("Integer is out of range");
+  }
+}
 
   /* ====================================================================== */
   /* ====[                   2.7.2 - REAL NUMBERS                     ]==== */
@@ -242,7 +256,11 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 <X_BACKSLASH>\\                strlit << '\\'; yy_pop_state();
 
 <X_BACKSLASH>[0-6]{1,3}        {
-                                 strlit << (char)(unsigned char)strtoul(yytext, NULL, 7);
+                                 unsigned long res = std::stoul(yytext, NULL, 7);
+                                 if (res > 255) {
+                                  yyerror("Invalid 8 bit number.");
+                                 }
+                                 strlit << (char)(unsigned char)res;
                                  yy_pop_state();
                                }
 <X_BACKSLASH>.                 strlit << *yytext; yy_pop_state(); 
