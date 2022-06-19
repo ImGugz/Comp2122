@@ -10,8 +10,8 @@ namespace l22 {
    */
   class type_checker: public basic_ast_visitor {
     cdk::symbol_table<l22::symbol> &_symtab;
-
     basic_ast_visitor *_parent;
+    std::shared_ptr<cdk::basic_type> _inBlockReturnType = nullptr;
 
   public:
     type_checker(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab, basic_ast_visitor *parent) :
@@ -25,7 +25,12 @@ namespace l22 {
 
   protected:
     void processUnaryExpression(cdk::unary_operation_node *const node, int lvl);
-    void processBinaryExpression(cdk::binary_operation_node *const node, int lvl);
+    void do_PIDExpression(cdk::binary_operation_node *const node, int lvl);
+    void do_IDExpression(cdk::binary_operation_node *const node, int lvl);
+    void do_IntOnlyExpression(cdk::binary_operation_node *const node, int lvl);
+    void do_ScalarLogicalExpression(cdk::binary_operation_node *const node, int lvl);
+    void do_BooleanLogicalExpression(cdk::binary_operation_node *const node, int lvl);
+    void do_GeneralLogicalExpression(cdk::binary_operation_node *const node, int lvl);
     template<typename T>
     void process_literal(cdk::literal_node<T> *const node, int lvl) {
     }

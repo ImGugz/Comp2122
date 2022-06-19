@@ -11,6 +11,8 @@ namespace l22 {
     std::shared_ptr<cdk::basic_type> _type;
     std::string _name;
     long _value; // hack!
+    std::vector<std::shared_ptr<cdk::basic_type>> _input_types;
+    std::shared_ptr<cdk::basic_type> _output_type;
 
   public:
     symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) :
@@ -36,7 +38,37 @@ namespace l22 {
     long value(long v) {
       return _value = v;
     }
+
+    void set_input_types(const std::vector<std::shared_ptr<cdk::basic_type>> &types) {
+      _input_types = types;
+    }
+
+    void set_output_type(const std::shared_ptr<cdk::basic_type> type) {
+      _output_type = type;
+    }
+
+    std::shared_ptr<cdk::basic_type> input_type(size_t ax) const {
+      return _input_types[ax];
+    }
+
+    const std::vector<std::shared_ptr<cdk::basic_type>>& input_types() const {
+      return _input_types;
+    }
+
+    size_t number_of_inputs() const {
+      return _input_types.size();
+    }
+
+    std::shared_ptr<cdk::basic_type> output_type() {
+      return _output_type;
+    }
+
   };
+
+  inline auto make_symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) {
+    return std::make_shared<symbol>(type, name, value);
+  }
+
 
 } // l22
 

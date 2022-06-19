@@ -21,7 +21,6 @@ static std::string qualifier_name(int qualifier) {
 }
 
 static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
-
   std::shared_ptr<cdk::functional_type> aux = cdk::functional_type::cast(typed_node);
   if (aux == nullptr) {
     return cdk::to_string(typed_node);
@@ -333,7 +332,7 @@ void l22::xml_writer::do_declaration_node(l22::declaration_node * const node, in
 
 void l22::xml_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
   
-  os() << std::string(lvl, ' ') << "<" << node->label() << " return_type='" << type_name(node->type()) << "'>" << std::endl;
+  os() << std::string(lvl, ' ') << "<" << node->label() << " return_type='" << type_name(node->outputType()) << "'>" << std::endl;
 
   openTag("arguments", lvl + 2);
   if (node->arguments()) {

@@ -149,8 +149,15 @@ elif        : tELSE block                           { $$ = $2; }
 type      :    tINT_TYPE                     { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);    }
           |    tREAL_TYPE                    { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE); }
           |    tSTRING_TYPE                  { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING); }
-          |    '[' tVOID_TYPE ']'            { $$ = cdk::reference_type::create(4, nullptr);          } 
-          |    '[' type ']'                  { $$ = cdk::reference_type::create(4, $2);               }
+          |    '[' tVOID_TYPE ']'            { $$ = cdk::reference_type::create(4, cdk::primitive_type::create(4, cdk::TYPE_VOID)); } 
+          |    '[' type ']'                  { if ($2->name() == cdk::TYPE_POINTER && 
+                                                  cdk::reference_type::cast($2)->referenced()->name() == cdk::TYPE_VOID) {
+                                                    $$ = cdk::reference_type::create(4, cdk::primitive_type::create(4, cdk::TYPE_VOID)); 
+                                                  } 
+                                               else {
+                                                $$ = cdk::reference_type::create(4, $2);     
+                                               }   
+                                             }
           |    function_type                 { $$ = $1;                                               }
           ;
 
