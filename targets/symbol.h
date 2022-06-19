@@ -14,6 +14,8 @@ namespace l22 {
     std::vector<std::shared_ptr<cdk::basic_type>> _input_types;
     std::shared_ptr<cdk::basic_type> _output_type;
 
+    int _offset = 0;
+
   public:
     symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) :
         _type(type), _name(name), _value(value) {
@@ -61,6 +63,14 @@ namespace l22 {
 
     std::shared_ptr<cdk::basic_type> output_type() {
       return _output_type;
+    }
+
+    int offset() const {
+      return _offset;
+    }
+    
+    bool global() const {
+      return _offset == 0;
     }
 
   };

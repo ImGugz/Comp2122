@@ -50,19 +50,19 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
 %%
    {    
-        yydebug=1; set_debug(1);
+        // yydebug=1; set_debug(1);
         if (endl_block) {
           yy_push_state(X_BLOCKCLOSE);
         }
         if (clear_blocks) {
-          std::cerr << "POPPING BLOCKS (" << indents.size() << ")" << std::endl;
+          // std:cerr << "POPPING BLOCKS (" << indents.size() << ")" << std::endl;
           indents.pop_back();
           if (indents.size() == 0) { clear_blocks = false; endl_block = true; }
           return '}';
         }
         else {
           if (lLevelsToPop > 0) {
-            std::cerr << "POPPING BLOCKS (" << lLevelsToPop << ")" << std::endl;
+            // std:cerr << "POPPING BLOCKS (" << lLevelsToPop << ")" << std::endl;
             lLevelsToPop--;
             indents.pop_back();
             if (lLevelsToPop == 0) { endl_block = true; }
@@ -84,7 +84,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 <X_NEWLINE>^[ ]+ {
     yy_pop_state();
     if (isValidIndent(yyleng)) {                                    // if a block was closed
-          std::cerr << "CASE 1" << std::endl;
+          // std:cerr << "CASE 1" << std::endl;
           if (lLevelsToPop == 0) {
             // instructions at the same block or empty block
             // std::cerr << "CASE 1a (levels to pop = 0)" << std::endl;
@@ -92,7 +92,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
           }
           else {
             // an indentation block has been closed, send closing block token to parser
-            std::cerr << "CASE 1b (levels to pop = " << lLevelsToPop << ")" << std::endl;
+            // std:cerr << "CASE 1b (levels to pop = " << lLevelsToPop << ")" << std::endl;
             if (lLevelsToPop > 0) {
               // std::cerr << "POPPING LEVELS (" << lLevelsToPop << ")" << std::endl;
               lLevelsToPop--;
@@ -103,33 +103,33 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
           }
     }
     else if (indents.size() == 0 || yyleng > indents.back()) {       // a block was opened
-          std::cerr << "CASE 2" << std::endl;
+          // std:cerr << "CASE 2" << std::endl;
           indents.push_back(yyleng);
           return '{';
     } else {                                                         // error: bad indentation
           // something wrong: bad indent: communicate to user
-          std::cerr << "CASE 4" << std::endl;
-          std::cerr << "bad indent at line " << yylineno;
+          // std:cerr << "CASE 4" << std::endl;
+          // std:cerr << "bad indent at line " << yylineno;
     }
 
 }
 
 <X_NEWLINE>\n      ;    // ignore successive newline chars
 <X_NEWLINE>.       {   
-  std::cerr << "CASE 4 (levels to pop = " << lLevelsToPop << ")" << std::endl;
+  // std:cerr << "CASE 4 (levels to pop = " << lLevelsToPop << ")" << std::endl;
   yy_pop_state();
   yyless(0);
   // outermost block has been closed 
   if (indents.size() > 0) {
-    std::cerr << " more indentations " << std::endl;
-    std::cerr << "should close " << indents.size() << " blocks at " << yylineno << std::endl;
+    // std:cerr << " more indentations " << std::endl;
+    // std:cerr << "should close " << indents.size() << " blocks at " << yylineno << std::endl;
     indents.pop_back();
     if (indents.size() > 0) { clear_blocks = true; }
     else { endl_block = true; }
     return '}';
   }
   else {
-    std::cerr << " no further indentations " << std::endl;
+    // std:cerr << " no further indentations " << std::endl;
     return ';'; // top-level declarations
   }
 }
@@ -271,7 +271,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
   /* ====================================================================== */
 
 <<EOF>>                {
-std::cerr << "AT <<EOF>> OPEN INDENTS ARE " << indents.size() << std::endl;
+// std:cerr << "AT <<EOF>> OPEN INDENTS ARE " << indents.size() << std::endl;
 if (indents.size() > 0) {
   indents.pop_back();
   return '}';

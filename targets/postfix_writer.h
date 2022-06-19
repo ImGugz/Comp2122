@@ -2,9 +2,12 @@
 #define __L22_TARGETS_POSTFIX_WRITER_H__
 
 #include "targets/basic_ast_visitor.h"
+#include "targets/symbol.h"
+#include <cdk/symbol_table.h>
+#include <cdk/emitters/basic_postfix_emitter.h>
 
 #include <sstream>
-#include <cdk/emitters/basic_postfix_emitter.h>
+#include <set>
 
 namespace l22 {
 
@@ -13,8 +16,19 @@ namespace l22 {
   //!
   class postfix_writer: public basic_ast_visitor {
     cdk::symbol_table<l22::symbol> &_symtab;
+    std::set<std::string> _functions_to_declare;
+
+    // semantic analysis
+    bool _inFunctionBody = false;
+    std::shared_ptr<l22::symbol> _function;
+
+    // code generation
     cdk::basic_postfix_emitter &_pf;
     int _lbl;
+
+    // aux
+    int _currentBodyRetLabel; // return on exclusive section
+
 
   public:
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab,
