@@ -504,9 +504,16 @@ void l22::type_checker::do_return_node(l22::return_node * const node, int lvl) {
     if (symbol == nullptr) {
       throw std::string("return statement outside program block");
     } else {
+
+      if (!node->retval()) {
+         throw std::string("wrong type for program return expression (integer expected).");
+      }
+      node->retval()->accept(this, lvl + 2);
       if (!node->retval()->is_typed(cdk::TYPE_INT)) {
+
         throw std::string("wrong type for program return expression (integer expected).");
       }
+
     }
   } else {
 
