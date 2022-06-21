@@ -102,15 +102,7 @@ void l22::frame_size_calculator::do_nullptr_node(l22::nullptr_node *const node, 
   // EMPTY
 }
 void l22::frame_size_calculator::do_return_node(l22::return_node *const node, int lvl) {
-  if (!_ret) {
-    try {
-      type_checker checker(_compiler, _symtab, this);
-      (node->retval())->accept(&checker, 0);
-      _localsize += node->retval()->type()->size();
-      _retsize = node->retval()->type()->size();
-      _ret = true;
-    } catch (const std::string &id) {}
-  } 
+  // EMPTY
 }
 void l22::frame_size_calculator::do_stack_alloc_node(l22::stack_alloc_node *const node, int lvl) {
   // EMPTY
@@ -146,18 +138,10 @@ void l22::frame_size_calculator::do_if_else_node(l22::if_else_node *const node, 
 }
 
 void l22::frame_size_calculator::do_declaration_node(l22::declaration_node *const node, int lvl) {
-  try {
-    type_checker checker(_compiler, _symtab, this);
-    (node)->accept(&checker, 0);
-    _localsize += node->type()->size();
-  } catch(const std::string &id) {}
+  _localsize += node->type()->size();
 }
 
 void l22::frame_size_calculator::do_function_definition_node(l22::function_definition_node *const node, int lvl) {
-  if (node->is_typed(cdk::TYPE_UNSPEC)) {
-    _ret = true;
-    _localsize += node->type()->size();
-  }
   node->block()->accept(this, lvl + 2);
 }
 

@@ -4,6 +4,8 @@
 #include ".auto/all_nodes.h"  // automatically generated
 #include <cdk/types/primitive_type.h>
 
+#include <l22_parser.tab.h>
+
 #define ASSERT_UNSPEC { if (node->type() != nullptr && !node->is_typed(cdk::TYPE_UNSPEC)) return; }
 
 static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
@@ -307,8 +309,6 @@ void l22::type_checker::do_variable_node(cdk::variable_node *const node, int lvl
   const std::string &id = node->name();
   std::shared_ptr<l22::symbol> symbol = _symtab.find(id);
 
-  std::cout << "Tipo do simbolo " << id << " : " << type_name(symbol->type());
-
   if (symbol != nullptr) {
     node->type(symbol->type());
   } else {
@@ -408,8 +408,20 @@ void l22::type_checker::do_assignment_node(cdk::assignment_node *const node, int
 
 void l22::type_checker::do_program_node(l22::program_node *const node, int lvl) {
   auto mainfun = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "_main", 0);
-  _symtab.insert(mainfun->name(), mainfun);
-  _parent->set_new_symbol(mainfun);
+  auto cdkInt = cdk::primitive_type::create(4, cdk::TYPE_INT);
+  std::vector<std::shared_ptr<cdk::basic_type>> input_types;
+  auto mainat = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "@", 0);
+  mainat->set_input_types(input_types);
+  mainat->set_output_type(cdkInt);
+  if (_symtab.find_local(mainat->name())) {
+    _symtab.replace(mainat->name(), mainat);
+  } else {
+    if (!_symtab.insert(mainat->name(), mainat)) {
+      std::cerr << "ERROR INSERTING MAIN @" << std::endl;
+      return;
+    }
+  }
+  _parent->set_new_symbol(mainat);
 }
 
 void l22::type_checker::do_block_node(l22::block_node * const node, int lvl) {
@@ -462,7 +474,6 @@ void l22::type_checker::do_function_call_node(l22::function_call_node * const no
   std::shared_ptr<cdk::basic_type> output_type;
   
   if (!node->identifier()) {            // recursive call 
-    std::cout << "chamada recursiva" << std::endl;
     auto symbol = _symtab.find("@", 1);
     if (symbol == nullptr) {
       throw std::string("recursive call outside function");
@@ -470,9 +481,7 @@ void l22::type_checker::do_function_call_node(l22::function_call_node * const no
     input_types = cdk::functional_type::cast(symbol->type())->input()->components();
     output_type = cdk::functional_type::cast(symbol->type())->output();
   } else {                              // non recursive call: just check functional type
-    std::cout << "chamada n recursiva" << std::endl;
     node->identifier()->accept(this, lvl + 2);
-    std::cout << "tipo do identificador: " << type_name(node->identifier()->type()) << std::endl;
     if (!(node->identifier()->type()->name() == cdk::TYPE_FUNCTIONAL)) {
       throw std::string("expected function pointer on function call");
     }
@@ -480,9 +489,7 @@ void l22::type_checker::do_function_call_node(l22::function_call_node * const no
     output_type = cdk::functional_type::cast(node->identifier()->type())->output(0);
   }
   
-  node->type(output_type); 
-  std::cout << "tipo do no" << type_name(node->type()) << std::endl;
-  
+  node->type(output_type);   
 
   if (node->arguments()->size() == input_types.size()) {
     node->arguments()->accept(this, lvl + 4);
@@ -510,21 +517,16 @@ void l22::type_checker::do_function_definition_node(l22::function_definition_nod
   auto function = l22::make_symbol(node->type(), "@", 0);
   function->set_input_types(input_types);
   function->set_output_type(node->outputType());
-  std::cout << "Aqui está o output type da funcao: " << cdk::to_string(node->outputType()) << std::endl;
   // NOTE: _symtab.replace_local has a delete bug
   if (_symtab.find_local(function->name())) {
-    std::cout << "Já existente..." << std::endl;
     _symtab.replace(function->name(), function);
-    _parent->set_new_symbol(function);
   } else {
-    if (_symtab.insert(function->name(), function)) {
-      std::cout << "Novo" << std::endl;
-      _parent->set_new_symbol(function);
+    if (!_symtab.insert(function->name(), function)) {
+      std::cerr << "ERROR INSERTING FUNCTION @" << std::endl;
+      return;
     }
   }
-
-  // _symtab.print_table();
-
+  _parent->set_new_symbol(function);
 }
 
 void l22::type_checker::do_return_node(l22::return_node * const node, int lvl) {
@@ -550,6 +552,7 @@ void l22::type_checker::do_return_node(l22::return_node * const node, int lvl) {
 
     if (node->retval()) {
       if (symbol->output_type() != nullptr && symbol->output_type()->name() == cdk::TYPE_VOID) {
+        std::cout << "RETURNING FROM " << symbol->name() << std::endl;
         throw std::string("return value specified for void function.");
       }
 
@@ -694,19 +697,17 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
   } else {
     id = node->identifier();
   }
+
   auto symbol = l22::make_symbol(node->type(), id, (bool)node->initializer());
-  std::cout << "Tipo do simbolo " << id << " : " << type_name(symbol->type()) << std::endl;
+  std::shared_ptr<l22::symbol> previous = _symtab.find(symbol->name());
 
-  //if (node->is_typed(cdk::TYPE_FUNCTIONAL)) {
-  //  symbol->set_input_types(cdk::functional_type::cast(node->type())->input()->components());
-  //  symbol->set_output_type(cdk::functional_type::cast(node->type())->output());
-  //}
-
-  if (_symtab.insert(id, symbol)) {
-    _parent->set_new_symbol(symbol);  
+  if (previous) { // Function redeclaration
+    _symtab.replace(symbol->name(), symbol);
   } else {
-    throw std::string("variable '" + id + "' redeclared");
+    _symtab.insert(id, symbol);
   }
+
+  _parent->set_new_symbol(symbol);
 
   // _symtab.print_table();
 }

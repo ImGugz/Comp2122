@@ -6,6 +6,8 @@
 #include "targets/symbol.h"
 #include ".auto/all_nodes.h"  // all_nodes.h is automatically generated
 
+#include <l22_parser.tab.h>
+
 //--------------------------------------------------------------------------//
 //                                CDK                                       //
 //--------------------------------------------------------------------------//
@@ -529,7 +531,6 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
   // Note that at this point we have made sure that the funcion call node is
   std::vector<std::shared_ptr<cdk::basic_type>> inputTypes;
 
-  std::cout << "simbolos de funcao atuais: " << _funsymbols_string() << std::endl;
   if (node->identifier()) {   // non recursive case: formal types are encolsed in identifier type!
     inputTypes = cdk::functional_type::cast(node->identifier()->type())->input()->components();
   } else {                     // recursive case: must fetch formal types from current function symbol
@@ -573,24 +574,23 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   std::cout << "FUNCTION DEFINITION" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
   auto symbol = new_symbol();
-  std::cout << "WTF: " << (symbol == nullptr) << std::endl;
 
-  std::cout << "simbolos de funcao atuais antes: " << _funsymbols_string() << std::endl;
+  _symtab.print_table();
+
   if (symbol) {
-    std::cout << "Não imprime!" << std::endl;
     _fun_symbols.push_back(symbol);
     reset_new_symbol();
   }
-  std::cout << "simbolos de funcao atuais depois: " << _funsymbols_string() << std::endl;
   
   _offset = 8;
   _symtab.push();
+
   if(node->arguments()) {
     _inFunctionArgs = true;
     for (size_t ix = 0; ix < node-> arguments()->size(); ix++){
       cdk::basic_node *argument = node->arguments()->node(ix);
       if (!argument ) break;
-      argument->accept(this,0);
+      argument->accept(this, 0);
     }
     _inFunctionArgs = false;
   }
@@ -602,28 +602,27 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   _pf.LABEL(lbl);
   frame_size_calculator lsc(_compiler, _symtab, symbol);
   node->accept(&lsc, lvl);
+  std::cout << "FRAME SIZE RETURNED " << lsc.localsize() << std::endl;
   _pf.ENTER(lsc.localsize());
 
-  // TODO: Check this case
-  _inFunctionBody = true;
-  if (node->outputType()->size() == 0) {
-    _offset = -lsc.retsize();
-  } else {
-    _offset = -node->outputType()->size();
-  }
+  _offset = 0; // Prepare for local variables
 
+  _inFunctionBody = true;
   if (node->block()) {
     node->block()->accept(this, lvl + 4);
   }
+  _symtab.print_table();
   _inFunctionBody = false;
 
   _symtab.pop();
+  _symtab.print_table();
   _pf.LEAVE();
   _pf.RET();
 
   _return_labels.pop_back();
-  _fun_symbols.pop_back();
-  std::cout << "depois da fundef: " << _funsymbols_string() << std::endl;
+  if (symbol) {
+    _fun_symbols.pop_back();
+  }
 
   // Since a function definition is an expression, the last line must be its value (i.e., the address of its code)
   if (_inFunctionBody) {
@@ -642,22 +641,19 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
 void l22::postfix_writer::do_return_node(l22::return_node * const node, int lvl) {
   std::cout << "RETURN" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
-  std::cout << "num return: " << _funsymbols_string() << std::endl;
   auto currFun = _fun_symbols.back();
   std::shared_ptr<cdk::basic_type> outputType = cdk::functional_type::cast(currFun->type())->output(0);
-  if (currFun->name() == "_main") { // Different case
-    node->retval()->accept(this, lvl);
-    _pf.STFVAL32();
-  }
-  else if (outputType->name() != cdk::TYPE_VOID) {
-    node->retval()->accept(this, lvl);
-    if (outputType->name() == cdk::TYPE_INT || outputType->name() == cdk::TYPE_DOUBLE ||
-        outputType->name() == cdk::TYPE_POINTER) {
-          _pf.STFVAL32();
+  if (outputType->name() != cdk::TYPE_VOID) {
+    node->retval()->accept(this, lvl + 2);
+    if (outputType->name() == cdk::TYPE_INT || outputType->name() == cdk::TYPE_STRING || outputType->name() == cdk::TYPE_POINTER) {
+      _pf.STFVAL32();
     }
-    else if(outputType->name() == cdk::TYPE_DOUBLE) {
+    else if (outputType->name() == cdk::TYPE_DOUBLE) {
       if (node->retval()->type()->name() == cdk::TYPE_INT) _pf.I2D();
       _pf.STFVAL64();
+    }
+    else {
+      std::cerr << "UNKNOWN RETURN TYPE" << std::endl;
     }
   }
   _pf.LEAVE();
@@ -800,11 +796,8 @@ void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node
           _pf.LABEL(id);
           node->initializer()->accept(this, lvl);
       } else if (node->is_typed(cdk::TYPE_FUNCTIONAL)) {
-        std::cout << "DEBUG 0.5" << std::endl;
         // we must push current symbol since it pertains to a function
-        std::cout << "antes da declaracao: " << _funsymbols_string() << std::endl;
         _fun_symbols.push_back(symbol);
-        std::cout << "depois da declaracao: " << _funsymbols_string() << std::endl;
         reset_new_symbol();
         node->initializer()->accept(this, lvl);
         _pf.DATA();
