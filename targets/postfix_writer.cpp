@@ -570,7 +570,6 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
 
 void l22::postfix_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
   std::cout << "FUNCTION DEFINITION" << std::endl;
-  std::cout << "DEBUG 2" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
   auto symbol = new_symbol();
   std::cout << "WTF: " << (symbol == nullptr) << std::endl;
@@ -722,7 +721,6 @@ void l22::postfix_writer::do_sizeof_node(l22::sizeof_node * const node, int lvl)
 //--------------------------------------------------------------------------//
 
 void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node, int lvl) {
-  std::cout << "DEBUG 0" << std::endl;
   std::cout << "DECLARATION" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
   auto id = node->identifier();
@@ -793,7 +791,6 @@ void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node
           _pf.LABEL(id);
           node->initializer()->accept(this, lvl);
       } else if (node->is_typed(cdk::TYPE_FUNCTIONAL)) {
-        std::cout << "DEBUG 0.5" << std::endl;
         node->initializer()->accept(this, lvl);
         _pf.DATA();
         _pf.ALIGN();

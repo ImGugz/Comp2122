@@ -477,7 +477,6 @@ void l22::type_checker::do_function_call_node(l22::function_call_node * const no
 
 void l22::type_checker::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
   ASSERT_UNSPEC;
-  std::cout << "DEBUG 3" << std::endl;
   std::vector<std::shared_ptr<cdk::basic_type>> input_types;
   for (size_t ax = 0; ax < node->arguments()->size(); ax++) {
     input_types.push_back(node->argument(ax)->type());
@@ -672,7 +671,6 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
   //  symbol->set_output_type(cdk::functional_type::cast(node->type())->output());
   //}
 
-  std::cout << "DEBUG 1" << std::endl;
   if (_symtab.insert(id, symbol)) {
     _parent->set_new_symbol(symbol);  
   } else {
