@@ -574,6 +574,7 @@ void l22::type_checker::do_return_node(l22::return_node * const node, int lvl) {
           }
         }
       } else if (symbol->output_type()->name() == cdk::TYPE_FUNCTIONAL) {
+        node->retval()->accept(this, lvl + 2);
         if (node->retval()->is_typed(cdk::TYPE_FUNCTIONAL)) {
           if (!(compatible_function_types(cdk::functional_type::cast(symbol->output_type()), 
                                       cdk::functional_type::cast(node->retval()->type()))
