@@ -73,6 +73,10 @@ namespace l22 {
       return _offset == 0;
     }
 
+    void set_offset(int offset) {
+      _offset = offset;
+    }
+
   };
 
   inline auto make_symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) {

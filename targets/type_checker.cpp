@@ -450,6 +450,7 @@ void l22::type_checker::do_function_call_node(l22::function_call_node * const no
     input_types = symbol->input_types();
     output_type = symbol->output_type();
   } else {                              // non recursive call: just check functional type
+    node->identifier()->accept(this, lvl + 2);
     if (!(node->identifier()->type()->name() == cdk::TYPE_FUNCTIONAL)) {
       throw std::string("expected function pointer on function call");
     }

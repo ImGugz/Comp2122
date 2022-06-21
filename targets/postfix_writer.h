@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <vector>
+#include <stack>
 
 namespace l22 {
 
@@ -19,14 +20,19 @@ namespace l22 {
     cdk::basic_postfix_emitter &_pf;
     int _lbl;
 
-    bool _inFunctionBody = true;
+    bool _inFunctionBody;
+    bool _inFunctionArgs;
     std::vector<std::string> _external_functions;
-    std::vector<std::shared_ptr<l22:symbol>> _fun_symbols;
+    std::vector<std::shared_ptr<l22::symbol>> _fun_symbols;
+    int _offset;
+    std::string _fun_label;
+    std::stack<int> _whileCond, _whileEnd;
 
   public:
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab,
                    cdk::basic_postfix_emitter &pf) :
-        basic_ast_visitor(compiler), _symtab(symtab), _pf(pf), _lbl(0) {
+        basic_ast_visitor(compiler), _symtab(symtab), _pf(pf), _lbl(0),
+        _inFunctionBody(false), _inFunctionArgs(false), _offset(0) {
     }
 
   public:
