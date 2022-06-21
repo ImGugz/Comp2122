@@ -529,6 +529,7 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
   // Note that at this point we have made sure that the funcion call node is
   std::vector<std::shared_ptr<cdk::basic_type>> inputTypes;
 
+  std::cout << "simbolos de funcao atuais: " << _funsymbols_string() << std::endl;
   if (node->identifier()) {   // non recursive case: formal types are encolsed in identifier type!
     inputTypes = cdk::functional_type::cast(node->identifier()->type())->input()->components();
   } else {                     // recursive case: must fetch formal types from current function symbol
@@ -574,9 +575,15 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   ASSERT_SAFE_EXPRESSIONS;
   auto symbol = new_symbol();
   std::cout << "WTF: " << (symbol == nullptr) << std::endl;
-  _fun_symbols.push_back(symbol);
-  reset_new_symbol();
 
+  std::cout << "simbolos de funcao atuais antes: " << _funsymbols_string() << std::endl;
+  if (symbol) {
+    std::cout << "Não imprime!" << std::endl;
+    _fun_symbols.push_back(symbol);
+    reset_new_symbol();
+  }
+  std::cout << "simbolos de funcao atuais depois: " << _funsymbols_string() << std::endl;
+  
   _offset = 8;
   _symtab.push();
   if(node->arguments()) {
@@ -617,6 +624,7 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
 
   _return_labels.pop_back();
   _fun_symbols.pop_back();
+  std::cout << "depois da fundef: " << _funsymbols_string() << std::endl;
 
   // Since a function definition is an expression, the last line must be its value (i.e., the address of its code)
   if (_inFunctionBody) {
@@ -635,8 +643,9 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
 void l22::postfix_writer::do_return_node(l22::return_node * const node, int lvl) {
   std::cout << "RETURN" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
+  std::cout << "num return: " << _funsymbols_string() << std::endl;
   auto currFun = _fun_symbols.back();
-  std::shared_ptr<cdk::basic_type> outputType = currFun->output_type();
+  std::shared_ptr<cdk::basic_type> outputType = cdk::functional_type::cast(currFun->type())->output(0);
   if (currFun->name() == "_main") { // Different case
     node->retval()->accept(this, lvl);
     _pf.STFVAL32();
@@ -794,6 +803,11 @@ void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node
           node->initializer()->accept(this, lvl);
       } else if (node->is_typed(cdk::TYPE_FUNCTIONAL)) {
         std::cout << "DEBUG 0.5" << std::endl;
+        // we must push current symbol since it pertains to a function
+        std::cout << "antes da declaracao: " << _funsymbols_string() << std::endl;
+        _fun_symbols.push_back(symbol);
+        std::cout << "depois da declaracao: " << _funsymbols_string() << std::endl;
+        reset_new_symbol();
         node->initializer()->accept(this, lvl);
         _pf.DATA();
         _pf.ALIGN();

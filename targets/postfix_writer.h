@@ -52,6 +52,16 @@ namespace l22 {
       return oss.str();
     }
 
+    std::string _funsymbols_string() {
+      std::ostringstream oss;
+      oss << "<";
+      for (size_t ix = 0; ix < _fun_symbols.size(); ix++) {
+        oss << _fun_symbols[ix]->name() << ",";
+      }
+      oss << ">";
+      return oss.str();
+    }
+
   public:
   // do not edit these lines
 #define __IN_VISITOR_HEADER__
