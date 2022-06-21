@@ -7,7 +7,7 @@
 #include <cdk/emitters/basic_postfix_emitter.h>
 
 #include <sstream>
-#include <set>
+#include <vector>
 
 namespace l22 {
 
@@ -16,19 +16,12 @@ namespace l22 {
   //!
   class postfix_writer: public basic_ast_visitor {
     cdk::symbol_table<l22::symbol> &_symtab;
-    std::set<std::string> _functions_to_declare;
-
-    // semantic analysis
-    bool _inFunctionBody = false;
-    std::shared_ptr<l22::symbol> _function;
-
-    // code generation
     cdk::basic_postfix_emitter &_pf;
     int _lbl;
 
-    // aux
-    int _currentBodyRetLabel; // return on exclusive section
-
+    bool _inFunctionBody = true;
+    std::vector<std::string> _external_functions;
+    std::vector<std::shared_ptr<l22:symbol>> _fun_symbols;
 
   public:
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab,
