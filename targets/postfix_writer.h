@@ -24,6 +24,7 @@ namespace l22 {
     bool _inFunctionArgs;
     std::vector<std::string> _external_functions;
     std::vector<std::shared_ptr<l22::symbol>> _fun_symbols;
+    std::vector<std::string> _return_labels;
     int _offset;
     std::string _fun_label;
     std::stack<int> _whileCond, _whileEnd;

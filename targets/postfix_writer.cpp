@@ -17,12 +17,9 @@ void l22::postfix_writer::do_sequence_node(cdk::sequence_node *const node, int l
   }
 }
 
-void l22::postfix_writer::do_nil_node(cdk::nil_node *const node, int lvl) {
-  // EMPTY
-}
-void l22::postfix_writer::do_data_node(cdk::data_node *const node, int lvl) {
-  // EMPTY
-}
+void l22::postfix_writer::do_nil_node(cdk::nil_node *const node, int lvl) {}
+
+void l22::postfix_writer::do_data_node(cdk::data_node *const node, int lvl) {}
 
 //--------------------------------------------------------------------------//
 //                                LITERALS                                  //
@@ -38,7 +35,12 @@ void l22::postfix_writer::do_integer_node(cdk::integer_node *const node, int lvl
 }
 
 void l22::postfix_writer::do_double_node(cdk::double_node *const node, int lvl) {
-  // EMPTY
+  std::cout << "DOUBLE" << std::endl;
+  if (_inFunctionBody) {
+    _pf.DOUBLE(node->value());
+  } else {
+    _pf.SDOUBLE(node->value());
+  }
 }
 
 void l22::postfix_writer::do_string_node(cdk::string_node *const node, int lvl) {
@@ -521,11 +523,111 @@ void l22::postfix_writer::do_if_else_node(l22::if_else_node *const node, int lvl
 //--------------------------------------------------------------------------//
 
 void l22::postfix_writer::do_function_call_node(l22::function_call_node * const node, int lvl) {
-  // EMPTY
+  std::cout << "FUNCTION CALL" << std::endl;
+  ASSERT_SAFE_EXPRESSIONS;
+
+  // Note that at this point we have made sure that the funcion call node is
+  std::vector<std::shared_ptr<cdk::basic_type>> inputTypes;
+
+  if (node->identifier()) {   // non recursive case: formal types are encolsed in identifier type!
+    inputTypes = cdk::functional_type::cast(node->identifier()->type())->input()->components();
+  } else {                     // recursive case: must fetch formal types from current function symbol
+    auto currFun = _fun_symbols.back();
+    inputTypes = currFun->input_types();
+  }
+
+  // Remeber that at this point we have made sure that actuals and formals are compatible
+  size_t argsSize = 0;
+  if (node->arguments()) {
+    for (int ix = node->arguments()->size() - 1; ix >= 0; --ix) {
+      auto arg = dynamic_cast<cdk::expression_node*>(node->arguments()->node(ix));
+      arg->accept(this, lvl + 2);
+      if (arg->is_typed(cdk::TYPE_INT) && inputTypes.at(ix)->name() == cdk::TYPE_DOUBLE) {
+        _pf.I2D();
+        argsSize += 4;
+      }
+      argsSize += arg->type()->size();
+    }
+  }
+
+  if (node->identifier()) {  // non recursive case: need to get address value of the pointer and jump to it
+    node->identifier()->accept(this, lvl + 2);
+    _pf.BRANCH();
+  } else {  // recursive case: just call last pushed function label
+    _pf.CALL(_return_labels.back());
+  }
+
+  if (argsSize != 0) {
+    _pf.TRASH(argsSize);
+  }
+  
+  if (node->is_typed(cdk::TYPE_DOUBLE)) {
+    _pf.LDFVAL64();
+  } else {
+    _pf.LDFVAL32();
+  }
 }
 
 void l22::postfix_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
-  // EMPTY
+  std::cout << "FUNCTION DEFINITION" << std::endl;
+  ASSERT_SAFE_EXPRESSIONS;
+  auto symbol = new_symbol();
+  _fun_symbols.push_back(symbol);
+  reset_new_symbol();
+
+  _offset = 8;
+  _symtab.push();
+  if(node->arguments()) {
+    _inFunctionArgs = true;
+    for (size_t ix = 0; ix < node-> arguments()->size(); ix++){
+      cdk::basic_node *argument = node->arguments()->node(ix);
+      if (!argument ) break;
+      argument->accept(this,0);
+    }
+    _inFunctionArgs = false;
+  }
+
+  _pf.TEXT();
+  _pf.ALIGN();
+  std::string lbl = mklbl(++_lbl);
+  _return_labels.push_back(lbl);
+  _pf.LABEL(lbl);
+  frame_size_calculator lsc(_compiler, _symtab, symbol);
+  node->accept(&lsc, lvl);
+  _pf.ENTER(lsc.localsize());
+
+  // TODO: Check this case
+  _inFunctionBody = true;
+  if (node->outputType()->size() == 0) {
+    _offset = -lsc.retsize();
+  } else {
+    _offset = -node->outputType()->size();
+  }
+
+  if (node->block()) {
+    node->block()->accept(this, lvl + 4);
+  }
+  _inFunctionBody = false;
+
+  _symtab.pop();
+  _pf.LEAVE();
+  _pf.RET();
+
+  _return_labels.pop_back();
+  _fun_symbols.pop_back();
+
+  // Since a function definition is an expression, the last line must be its value (i.e., the address of its code)
+  if (_inFunctionBody) {
+    // local variable initializer
+    _pf.TEXT();
+    _pf.ADDR(lbl);
+  } else {
+    // global variable initializer
+    _pf.DATA();
+    _pf.SADDR(lbl);
+  }
+
+  _fun_label = lbl;
 }
 
 void l22::postfix_writer::do_return_node(l22::return_node * const node, int lvl) {
@@ -607,9 +709,9 @@ void l22::postfix_writer::do_sizeof_node(l22::sizeof_node * const node, int lvl)
   std::cout << "SIZE OF" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
   if (_inFunctionBody) {
-    _pf.INT(node->type()->size());
+    _pf.INT(node->expression()->type()->size());
   } else {
-    _pf.SINT(node->type()->size());
+    _pf.SINT(node->expression()->type()->size());
   }
 }
 
