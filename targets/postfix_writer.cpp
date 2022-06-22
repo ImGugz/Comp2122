@@ -534,6 +534,7 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
   if (node->identifier()) {   // non recursive case: formal types are encolsed in identifier type!
     inputTypes = cdk::functional_type::cast(node->identifier()->type())->input()->components();
   } else {                     // recursive case: must fetch formal types from current function symbol
+    std::cout << "WE GET HERE IN RECURSIVE CASE" << std::endl;
     auto currFun = _fun_symbols.back();
     inputTypes = currFun->input_types();
   }
@@ -765,10 +766,12 @@ void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node
     }
   } else {
     if (!node->initializer()) { // int x
-      _pf.BSS();
-      _pf.ALIGN();
-      _pf.LABEL(id);
-      _pf.SALLOC(typesize);
+      if (node->qualifier() != tUSE) {
+        _pf.BSS();
+        _pf.ALIGN();
+        _pf.LABEL(id);
+        _pf.SALLOC(typesize);
+      }
     } else { // e.g int x = 4 
       if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_DOUBLE) || node->is_typed(cdk::TYPE_POINTER)) {
         _pf.DATA();

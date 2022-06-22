@@ -138,6 +138,8 @@ void l22::frame_size_calculator::do_if_else_node(l22::if_else_node *const node, 
 }
 
 void l22::frame_size_calculator::do_declaration_node(l22::declaration_node *const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
+  if (node->initializer()) node->initializer()->accept(this, lvl + 2);
   _localsize += node->type()->size();
 }
 
