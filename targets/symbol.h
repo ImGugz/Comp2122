@@ -13,12 +13,18 @@ namespace l22 {
     long _value; // hack!
     std::vector<std::shared_ptr<cdk::basic_type>> _input_types;
     std::shared_ptr<cdk::basic_type> _output_type;
+    bool _initialized;
+    bool _is_redcl;
+    bool _is_decl;
+    bool _is_extern;
+    bool _is_foreign;
 
     int _offset = 0;
 
+
   public:
     symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) :
-        _type(type), _name(name), _value(value) {
+        _type(type), _name(name), _value(value), _is_extern(false), _is_foreign(false) {
     }
 
     virtual ~symbol() {
@@ -41,28 +47,20 @@ namespace l22 {
       return _value = v;
     }
 
-    void set_input_types(const std::vector<std::shared_ptr<cdk::basic_type>> &types) {
-      _input_types = types;
+    void set_extern(bool val) {
+      _is_extern = true;
     }
 
-    void set_output_type(const std::shared_ptr<cdk::basic_type> type) {
-      _output_type = type;
+    bool is_extern() {
+      return _is_extern;
     }
 
-    std::shared_ptr<cdk::basic_type> input_type(size_t ax) const {
-      return _input_types[ax];
+    void set_foreign(bool val) {
+      _is_foreign = true;
     }
 
-    const std::vector<std::shared_ptr<cdk::basic_type>>& input_types() const {
-      return _input_types;
-    }
-
-    size_t number_of_inputs() const {
-      return _input_types.size();
-    }
-
-    std::shared_ptr<cdk::basic_type> output_type() {
-      return _output_type;
+    bool is_foreign() {
+      return _is_foreign;
     }
 
     int offset() const {

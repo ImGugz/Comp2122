@@ -6,6 +6,7 @@
 #include <cdk/symbol_table.h>
 #include <cdk/emitters/basic_postfix_emitter.h>
 
+#include <set>
 #include <sstream>
 #include <vector>
 #include <stack>
@@ -28,18 +29,30 @@ namespace l22 {
     int _offset;
     std::string _fun_label;
     std::stack<int> _whileCond, _whileEnd;
+    std::vector<std::set<std::string>> _symbols_to_declare;
+    std::vector<std::string> _doubt_symbols;
+    std::string _doubt_symbol;
+
+    bool _first_declarations;
+    bool _possible_extern_call;
+    std::string _extern_label;
+    //std::shared_ptr<l22::symbol> _symbol_to_define;
+
 
   public:
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab,
                    cdk::basic_postfix_emitter &pf) :
         basic_ast_visitor(compiler), _symtab(symtab), _pf(pf), _lbl(0),
-        _inFunctionBody(false), _inFunctionArgs(false), _offset(0) {
+        _inFunctionBody(false), _inFunctionArgs(false), _offset(0), _first_declarations(true), _possible_extern_call(false) {
     }
 
   public:
     ~postfix_writer() {
       os().flush();
     }
+  
+  protected:
+  void do_initializer(cdk::expression_node * const node, int lvl, std::shared_ptr<l22::symbol> const symbol);
 
   private:
     /** Method used to generate sequential labels. */
@@ -57,6 +70,16 @@ namespace l22 {
       oss << "<";
       for (size_t ix = 0; ix < _fun_symbols.size(); ix++) {
         oss << _fun_symbols[ix]->name() << ",";
+      }
+      oss << ">";
+      return oss.str();
+    }
+
+    std::string _symbols_string() {
+      std::ostringstream oss;
+      oss << "<";
+      for (std::string name : _symbols_to_declare.back()) {
+        oss << name << ",";
       }
       oss << ">";
       return oss.str();

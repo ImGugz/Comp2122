@@ -58,8 +58,7 @@ static bool compatible_function_types(std::shared_ptr<cdk::functional_type> ltyp
   if (ltype->input()->size() != rtype->input()->size()) {
     return false;
   }
-
-  for (size_t tx = 0; tx < ltype->input()->size(); tx++) {
+  for (size_t tx = 0; tx < ltype->input_length(); tx++) {
     if (ltype->input(tx)->name() == cdk::TYPE_POINTER) {
       if (!(rtype->input(tx)->name() == cdk::TYPE_POINTER && compatible_pointed_types(ltype->input(tx), rtype->input(tx)))) {
         return false;
@@ -411,8 +410,6 @@ void l22::type_checker::do_program_node(l22::program_node *const node, int lvl) 
   auto cdkInt = cdk::primitive_type::create(4, cdk::TYPE_INT);
   std::vector<std::shared_ptr<cdk::basic_type>> input_types;
   auto mainat = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "@", 0);
-  mainat->set_input_types(input_types);
-  mainat->set_output_type(cdkInt);
   if (_symtab.find_local(mainat->name())) {
     _symtab.replace(mainat->name(), mainat);
   } else {
@@ -515,8 +512,9 @@ void l22::type_checker::do_function_definition_node(l22::function_definition_nod
   node->type(cdk::functional_type::create(input_types, node->outputType()));
 
   auto function = l22::make_symbol(node->type(), "@", 0);
-  function->set_input_types(input_types);
-  function->set_output_type(node->outputType());
+  //function->set_input_types(input_types);
+  //function->set_output_type(node->outputType());
+
   // NOTE: _symtab.replace_local has a delete bug
   if (_symtab.find_local(function->name())) {
     _symtab.replace(function->name(), function);
@@ -551,35 +549,36 @@ void l22::type_checker::do_return_node(l22::return_node * const node, int lvl) {
   } else {
 
     if (node->retval()) {
-      if (symbol->output_type() != nullptr && symbol->output_type()->name() == cdk::TYPE_VOID) {
+      std::shared_ptr<cdk::functional_type> rettype = cdk::functional_type::cast(symbol->type());
+      if (rettype->output() != nullptr && rettype->output(0)->name() == cdk::TYPE_VOID) {
         std::cout << "RETURNING FROM " << symbol->name() << std::endl;
         throw std::string("return value specified for void function.");
       }
 
       node->retval()->accept(this, lvl + 2);
 
-      if (symbol->output_type()->name() == cdk::TYPE_INT) {
+      if (rettype->output() != nullptr && rettype->output(0)->name() == cdk::TYPE_INT) {
         if (!node->retval()->is_typed(cdk::TYPE_INT)) {
           throw std::string("wrong type for return expression (integer expected).");
         }
-      } else if (symbol->output_type()->name() == cdk::TYPE_DOUBLE) {
+      } else if (rettype->output() != nullptr && rettype->output(0)->name() == cdk::TYPE_DOUBLE) {
         if (!node->retval()->is_typed(cdk::TYPE_INT) && !node->retval()->is_typed(cdk::TYPE_DOUBLE)) {
           throw std::string("wrong type for return expression (integer or double expected).");
         }
-      } else if (symbol->output_type()->name() == cdk::TYPE_STRING) {
+      } else if (rettype->output() != nullptr && rettype->output(0)->name() == cdk::TYPE_STRING) {
         if (!node->retval()->is_typed(cdk::TYPE_STRING)) {
           throw std::string("wrong type for return expression (string expected).");
         }
-      } else if (symbol->output_type()->name() == cdk::TYPE_POINTER) {
+      } else if (rettype->output() != nullptr && rettype->output(0)->name() == cdk::TYPE_POINTER) {
         if (node->retval()->is_typed(cdk::TYPE_POINTER)) {
-          if (!(compatible_pointed_types(symbol->output_type(), node->retval()->type()))) {
+          if (!(compatible_pointed_types(rettype->output(0), node->retval()->type()))) {
             throw std::string("wrong type for return expression (pointer expected).");
           }
         }
-      } else if (symbol->output_type()->name() == cdk::TYPE_FUNCTIONAL) {
+      } else if (rettype->output() != nullptr && rettype->output(0)->name() == cdk::TYPE_FUNCTIONAL) {
         node->retval()->accept(this, lvl + 2);
         if (node->retval()->is_typed(cdk::TYPE_FUNCTIONAL)) {
-          if (!(compatible_function_types(cdk::functional_type::cast(symbol->output_type()), 
+          if (!(compatible_function_types(cdk::functional_type::cast(rettype->output(0)), 
                                       cdk::functional_type::cast(node->retval()->type()))
             || (node->retval()->is_typed(cdk::TYPE_POINTER) && 
                 cdk::reference_type::cast(node->retval()->type())->referenced() == nullptr))) {
@@ -652,12 +651,10 @@ void l22::type_checker::do_sizeof_node(l22::sizeof_node * const node, int lvl) {
 
 // NOTE: check type covariance regarding functions and nullptr and [void]
 void l22::type_checker::do_declaration_node(l22::declaration_node * const node, int lvl) {
-
+  //_symtab.print_table();
   if (node->initializer() != nullptr) {
     node->initializer()->accept(this, lvl + 2);
-
     if (node->type()) {
-
       if (node->is_typed(cdk::TYPE_INT)) {
         if (!node->initializer()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type for initializer (integer expected).");
       } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
@@ -699,15 +696,55 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
   }
 
   auto symbol = l22::make_symbol(node->type(), id, (bool)node->initializer());
-  std::shared_ptr<l22::symbol> previous = _symtab.find(symbol->name());
+  std::shared_ptr<l22::symbol> previous = _symtab.find_local(symbol->name());
+  //_symtab.print_table();
 
   if (previous) { // Function redeclaration
-    _symtab.replace(symbol->name(), symbol);
+    if (previous->type()->name() == cdk::TYPE_FUNCTIONAL && 
+        symbol->type()->name() == cdk::TYPE_FUNCTIONAL && 
+        compatible_function_types(cdk::functional_type::cast(previous->type()), cdk::functional_type::cast(symbol->type()))) {
+        _symtab.replace(symbol->name(), symbol);
+        //if (previous->is_decl()) {  
+        //   std::cout << "Redeclaração de função!" << std::endl;
+        //  symbol->set_decl(true);
+        //  symbol->set_redecl(true); 
+        //}
+       
+    } else if (previous->type()->name() == cdk::TYPE_POINTER && 
+        symbol->type()->name() == cdk::TYPE_POINTER && 
+        compatible_pointed_types(previous->type(), symbol->type())) {
+        _symtab.replace(symbol->name(), symbol);
+        //if (previous->is_decl()) {  
+        //   std::cout << "Redeclaração de ponteiro!" << std::endl;
+        //  symbol->set_decl(true);
+        //  symbol->set_redecl(true); 
+        //}
+       
+    } else if (previous->type()->name() == symbol->type()->name()) {
+        _symtab.replace(symbol->name(), symbol);
+         std::cout << "Redeclaração de primitivo!" << std::endl;
+        //if (previous->is_decl()) {  
+        //  std::cout << "Redeclaração de primitivo!" << std::endl;
+        //  symbol->set_decl(true);
+        //  symbol->set_redecl(true); 
+        //}
+      
+    } else {
+      throw std::string(id + " was redefined.");
+    }
   } else {
     _symtab.insert(id, symbol);
-  }
+  } 
 
   _parent->set_new_symbol(symbol);
+  //std::cout << "After seeing new symbol in type checker: " << std::endl;
+  //_symtab.print_table();
+
+  if (node->qualifier() == tUSE) {
+    symbol->set_extern(true);
+  } else if (node->qualifier() == tFOREIGN) {
+    symbol->set_foreign(true);
+  }
 
   // _symtab.print_table();
 }
