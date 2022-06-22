@@ -466,7 +466,6 @@ void l22::type_checker::do_if_else_node(l22::if_else_node *const node, int lvl) 
 
 void l22::type_checker::do_function_call_node(l22::function_call_node * const node, int lvl) {
   ASSERT_UNSPEC;
-
   std::vector<std::shared_ptr<cdk::basic_type>> input_types;
   std::shared_ptr<cdk::basic_type> output_type;
   

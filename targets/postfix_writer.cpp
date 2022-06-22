@@ -649,6 +649,7 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
   if (node->identifier()) {   // non recursive case: formal types are encolsed in identifier type!
     inputTypes = cdk::functional_type::cast(node->identifier()->type())->input()->components();
   } else {                     // recursive case: must fetch formal types from current function symbol
+    std::cout << "WE GET HERE IN RECURSIVE CASE" << std::endl;
     auto currFun = _fun_symbols.back();
     inputTypes = cdk::functional_type::cast(currFun->type())->input()->components();
   }
