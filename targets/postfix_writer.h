@@ -5,6 +5,7 @@
 #include "targets/symbol.h"
 #include <cdk/symbol_table.h>
 #include <cdk/emitters/basic_postfix_emitter.h>
+#include <cdk/types/functional_type.h>
 
 #include <set>
 #include <sstream>
@@ -37,6 +38,7 @@ namespace l22 {
     bool _possible_extern_call;
     std::string _extern_label;
     //std::shared_ptr<l22::symbol> _symbol_to_define;
+    //std::vector<std::shared_ptr<cdk::basic_type>> _intended_ret_types;
 
 
   public:

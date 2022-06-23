@@ -356,19 +356,24 @@ void l22::postfix_writer::do_variable_node(cdk::variable_node *const node, int l
 
   // we might be doing a function call of a function that we do not know a prior to be extern of local to this module
   if (_symbols_to_declare.front().find(id) != _symbols_to_declare.front().end()) {
+    std::cout << "caso 1 var" << std::endl;
     _doubt_symbol = symbol->name();
   } else if (symbol->is_extern()) {
     _extern_label = symbol->name();
+     std::cout << "caso 2 var" << std::endl;
   } else if (symbol->is_foreign()) {
     if (symbol->name() == "argc") {
       //os() << "Devo ir para aqui no argc" << std::endl;
       //std::cout << "Devo ir para aqui no argc" << std::endl;
       _pf.LOCAL(8);
+       std::cout << "caso 3 var" << std::endl;
     }
+      std::cout << "caso 4 var" << std::endl;
   } else if (symbol->global()) {
-     std::cout << "É global" << std::endl;
+     std::cout << id + " é global" << std::endl;
     _pf.ADDR(symbol->name());
   } else {
+     std::cout << id + " é dos argumentos!" << std::endl;
     _pf.LOCAL(symbol->offset());
   }
   
@@ -454,6 +459,7 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
     _pf.TEXT(_return_labels.back());
     _pf.ALIGN();
     _pf.LABEL("_" + funlabel);
+
 
     size_t argsSize = 0;
     size_t sizeSum = 0;
@@ -679,10 +685,12 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
 
   if (node->identifier()) {   // non recursive case: formal types are encolsed in identifier type!
     inputTypes = cdk::functional_type::cast(node->identifier()->type())->input()->components();
+    //_intended_ret_types.push_back( cdk::functional_type::cast(node->identifier()->type())->output(0));
   } else {                     // recursive case: must fetch formal types from current function symbol
     std::cout << "WE GET HERE IN RECURSIVE CASE" << std::endl;
     auto currFun = _fun_symbols.back();
     inputTypes = cdk::functional_type::cast(currFun->type())->input()->components();
+    //_intended_ret_types.push_back(cdk::functional_type::cast(nullptr));
   }
 
   // Remeber that at this point we have made sure that actuals and formals are compatible
@@ -698,6 +706,8 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
       argsSize += arg->type()->size();
     }
   }
+
+
   std::cout<< "Tamanho dos argumentos: " << argsSize <<std::endl;
 
   if (node->identifier()) {  // non recursive case: need to get address value of the pointer and jump to it
@@ -714,7 +724,7 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
       _doubt_symbols.push_back(_doubt_symbol);
     } else {
        //os() << "A fazer branch!" << std::endl;
-       //std::cout << "A fazer branch!" << std::endl;
+       std::cout << "A fazer branch!" << std::endl;
       _pf.BRANCH();
     }
     _extern_label.clear();
@@ -728,11 +738,14 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
     _pf.TRASH(argsSize);
   }
   
-  if (node->is_typed(cdk::TYPE_DOUBLE)) {
-    _pf.LDFVAL64();
-  } else {
+  // changed this
+  if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_POINTER) || node->is_typed(cdk::TYPE_STRING)) {
     _pf.LDFVAL32();
+  } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
+    std::cout << "Should be here" << std::endl;
+    _pf.LDFVAL64();
   }
+  //_intended_ret_types.pop_back();
 }
 
 void l22::postfix_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
@@ -794,7 +807,7 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   // Since a function definition is an expression, the last line must be its value (i.e., the address of its code)
   if (_inFunctionBody) {
     // local variable initializer
-    std::cout << "Devia estar aqui" << std::endl;
+    // std::cout << "Devia estar aqui" << std::endl;
     _pf.TEXT(_return_labels.back());
     _pf.ADDR(lbl);
   } else {
@@ -908,12 +921,14 @@ void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node
   auto id = node->identifier();
   std::cout << "(DEBUG) _offset: " << _offset << std::endl;
   int offset = 0, typesize = node->type()->size();
-  if (_inFunctionBody) {
-    _offset -= typesize;
-    offset = _offset;
-  } else if (_inFunctionArgs) {
+  if (_inFunctionArgs) {
+    std::cout << "A ver cenas nos argumentos" << std::endl;
     offset = _offset;
     _offset += typesize;
+  } else if (_inFunctionBody) {
+     std::cout << "A ver cenas no corpo" << std::endl;
+    _offset -= typesize;
+    offset = _offset;
   } else {
     offset = 0;
   }
