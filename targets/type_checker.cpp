@@ -43,32 +43,47 @@ static bool compatible_function_types(std::shared_ptr<cdk::functional_type> ltyp
   if (ltype->output(0)->name() == cdk::TYPE_POINTER) {
     // NOTE: this is a little weird, but we do know that nullptr does not exist in an output type of a funtype
     if (!(rtype->output(0)->name() == cdk::TYPE_POINTER && compatible_pointed_types(ltype->output(0), rtype->output(0)))) {
+      std::cout << "Falha 1" << std::endl;
       return false;
     }
   } else if (ltype->output(0)->name() == cdk::TYPE_FUNCTIONAL) {
      if (!(rtype->output(0)->name() == cdk::TYPE_FUNCTIONAL && 
           compatible_function_types(cdk::functional_type::cast(ltype->output(0)), cdk::functional_type::cast(rtype->output(0))))) {
+      std::cout << "Falha 2" << std::endl;
       return false;
     }
     // NOTE: check for each primitive type?
+  } else if (ltype->output(0)->name() == cdk::TYPE_DOUBLE) {
+    if (!((rtype->output(0)->name() == cdk::TYPE_INT) || (rtype->output(0)->name() == cdk::TYPE_DOUBLE))) {
+      return false;
+    }
   } else if ((ltype->output(0)->name() != rtype->output(0)->name())) {
+     std::cout << "Falha 3" << std::endl;
     return false;
   }
 
-  if (ltype->input()->size() != rtype->input()->size()) {
+  if (ltype->input_length() != rtype->input_length()) {
+     std::cout << "Falha 4" << std::endl;
     return false;
   }
   for (size_t tx = 0; tx < ltype->input_length(); tx++) {
     if (ltype->input(tx)->name() == cdk::TYPE_POINTER) {
       if (!(rtype->input(tx)->name() == cdk::TYPE_POINTER && compatible_pointed_types(ltype->input(tx), rtype->input(tx)))) {
+         std::cout << "Falha 5" << std::endl;
         return false;
       }
     } else if (ltype->input(tx)->name() == cdk::TYPE_FUNCTIONAL) {
       if (!(rtype->input(tx)->name() == cdk::TYPE_FUNCTIONAL && 
           compatible_function_types(cdk::functional_type::cast(ltype->input(tx)), cdk::functional_type::cast(rtype->input(tx))))) {
+             std::cout << "Falha 6" << std::endl;
+        return false;
+      }
+    } else if (rtype->input(tx)->name() == cdk::TYPE_DOUBLE) {
+      if ((!((ltype->input(tx)->name() == cdk::TYPE_INT) || (ltype->input(tx)->name() == cdk::TYPE_DOUBLE)))) {
         return false;
       }
     } else if ((ltype->input(tx)->name() != rtype->input(tx)->name())) {
+       std::cout << "Falha 7" << std::endl;
       return false;
     }
   }
@@ -671,6 +686,9 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
           throw std::string("wrong type for initializer (pointer expected).");
         }
       } else if (node->is_typed(cdk::TYPE_FUNCTIONAL)) {  // f = function or f = nullptr
+        std::cout << "Funções compatíveis?: " << (compatible_function_types(cdk::functional_type::cast(node->type()), 
+                                      cdk::functional_type::cast(node->initializer()->type())) ? "true" : "false") << std::endl;
+        std::cout << type_name(node->type()) << " and " << type_name(node->initializer()->type()) << std::endl;
         if (!((node->initializer()->is_typed(cdk::TYPE_FUNCTIONAL) && 
             compatible_function_types(cdk::functional_type::cast(node->type()), 
                                       cdk::functional_type::cast(node->initializer()->type())))
