@@ -495,6 +495,7 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
   reset_new_symbol();
 
   _return_labels.push_back("_main");
+  std::cout << "Ao início do programa\n" << std::endl;
   _symtab.push(); // _level++; new context;
   _pf.TEXT("_main");
   _pf.ALIGN();
@@ -503,6 +504,7 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
 
   frame_size_calculator lsc(_compiler, _symtab, symbol);
   node->accept(&lsc, lvl);
+  std::cout << "FRAME SIZE RETURNED " << lsc.localsize() << std::endl;
   _pf.ENTER(lsc.localsize());
 
   _inFunctionBody = true;
@@ -512,6 +514,7 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
   _inFunctionBody = false;
 
   _symtab.pop();
+   std::cout << "A sair do programa\n" << std::endl;
   _return_labels.pop_back();
   _pf.LEAVE();
   _pf.RET();
@@ -527,6 +530,7 @@ void l22::postfix_writer::do_block_node(l22::block_node * const node, int lvl) {
   std::cout << "BLOCK" << std::endl;
   std::set<std::string> symbols;
   _symbols_to_declare.push_back(symbols);
+   std::cout << "Ao inicio de um bloco\n" << std::endl;
   _symtab.push();
   if (node->declarations()) node->declarations()->accept(this, lvl + 2);
   for (std::string name : _symbols_to_declare.back()) {
@@ -542,6 +546,7 @@ void l22::postfix_writer::do_block_node(l22::block_node * const node, int lvl) {
   }
   _symbols_to_declare.pop_back();
   if (node->instructions()) node->instructions()->accept(this, lvl + 2);
+   std::cout << "Ao fim de um bloco\n" << std::endl;
   _symtab.pop();
 }
 
@@ -555,7 +560,7 @@ void l22::postfix_writer::do_evaluation_node(l22::evaluation_node *const node, i
 void l22::postfix_writer::do_write_node(l22::write_node *const node, int lvl) {
   std::cout << "WRITE" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
-  for (int ix = node->arguments()->size() - 1; ix >= 0; --ix) {
+  for (size_t ix = 0; ix < node->arguments()->size(); ix++) {
     auto arg = dynamic_cast<cdk::expression_node*>(node->arguments()->node(ix));
     arg->accept(this, lvl);
     if (arg->is_typed(cdk::TYPE_INT)) {
@@ -612,6 +617,7 @@ void l22::postfix_writer::do_while_node(l22::while_node *const node, int lvl) {
   _whileCond.push(++_lbl);
   _whileEnd.push(++_lbl);
 
+   std::cout << "Ao inicio de um while\n" << std::endl;
   _symtab.push(); // new context
 
   _pf.ALIGN();
@@ -625,6 +631,7 @@ void l22::postfix_writer::do_while_node(l22::while_node *const node, int lvl) {
   _pf.LABEL(mklbl(_whileEnd.top()));
 
   _symtab.pop();
+   std::cout << "Ao fim de um while\n" << std::endl;
   
   _whileEnd.pop();
   _whileCond.pop();
@@ -713,8 +720,7 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
        std::cout << "A fazer branch!" << std::endl;
       _pf.BRANCH();
     }
-    _extern_label.clear();
-    _doubt_symbol.clear();
+   
     //_possible_extern_call = false;
   } else {  // recursive case: just call last pushed function label
     _pf.CALL(_return_labels.back());
@@ -725,12 +731,23 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
   }
   
   // changed this
-  if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_POINTER) || node->is_typed(cdk::TYPE_STRING)) {
+  if (node->is_typed(cdk::TYPE_INT)) {
+    std::cout << "A converter" << std::endl;
+    if (!_extern_label.empty()) {
+      _pf.LDFVAL32();
+    } else {
+      _pf.LDFVAL64();
+      _pf.D2I();
+    }
+  } else if (node->is_typed(cdk::TYPE_POINTER) || node->is_typed(cdk::TYPE_STRING) || node->is_typed(cdk::TYPE_FUNCTIONAL)) {
     _pf.LDFVAL32();
   } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
     std::cout << "Should be here" << std::endl;
     _pf.LDFVAL64();
   }
+
+  _extern_label.clear();
+  _doubt_symbol.clear();
   //_intended_ret_types.pop_back();
 }
 
@@ -740,7 +757,7 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   ASSERT_SAFE_EXPRESSIONS;
   auto symbol = new_symbol();
 
-  //_symtab.print_table();
+  ////_symtab.print_table();
 
   if (symbol) {
     _fun_symbols.push_back(symbol);
@@ -748,6 +765,8 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   }
   
   _offset = 8;
+  std::cout << "Ao inicio da definicao de funcao: " << std::endl;
+   //_symtab.print_table();
   _symtab.push();
 
   if(node->arguments()) {
@@ -766,7 +785,10 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   _pf.ALIGN();
   _pf.LABEL(lbl);
   frame_size_calculator lsc(_compiler, _symtab, symbol);
+  _symtab.push();
+  std::cout << "ENTERING LSC " << lsc.localsize() << std::endl;
   node->accept(&lsc, lvl);
+  _symtab.pop();
   std::cout << "FRAME SIZE RETURNED " << lsc.localsize() << std::endl;
   _pf.ENTER(lsc.localsize());
 
@@ -781,6 +803,8 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   _inFunctionBody = _wasInFunctionBody;
 
   _symtab.pop();
+  std::cout << "Depois da definição da função: " << std::endl;
+  //_symtab.print_table();
   //_table();
   _pf.LEAVE();
   _pf.RET();
@@ -813,7 +837,13 @@ void l22::postfix_writer::do_return_node(l22::return_node * const node, int lvl)
   std::shared_ptr<cdk::basic_type> outputType = cdk::functional_type::cast(currFun->type())->output(0);
   if (outputType->name() != cdk::TYPE_VOID) {
     node->retval()->accept(this, lvl + 2);
-    if (outputType->name() == cdk::TYPE_INT || outputType->name() == cdk::TYPE_STRING || outputType->name() == cdk::TYPE_POINTER) {
+    if (outputType->name() == cdk::TYPE_INT) {
+      _pf.I2D();
+      _pf.STFVAL64();
+    }
+    else if (outputType->name() == cdk::TYPE_STRING || outputType->name() == cdk::TYPE_POINTER || 
+             outputType->name() == cdk::TYPE_FUNCTIONAL) {
+      std::cout << "Devia estar aqui a retornar" << std::endl;
       _pf.STFVAL32();
     }
     else if (outputType->name() == cdk::TYPE_DOUBLE) {
@@ -1036,7 +1066,8 @@ void l22::postfix_writer::do_initializer(cdk::expression_node * const node, int 
   //} else {
     if (_inFunctionBody) {
         node->accept(this, lvl);
-        if (symbol->is_typed(cdk::TYPE_INT) || symbol->is_typed(cdk::TYPE_STRING) || symbol->is_typed(cdk::TYPE_POINTER)) {
+        if (symbol->is_typed(cdk::TYPE_INT) || symbol->is_typed(cdk::TYPE_STRING) || 
+            symbol->is_typed(cdk::TYPE_POINTER) || symbol->is_typed(cdk::TYPE_FUNCTIONAL)) {
           _pf.LOCAL(symbol->offset());
           _pf.STINT();
         } else if(symbol->is_typed(cdk::TYPE_DOUBLE)) {

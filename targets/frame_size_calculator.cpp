@@ -139,9 +139,7 @@ void l22::frame_size_calculator::do_if_else_node(l22::if_else_node *const node, 
 
 void l22::frame_size_calculator::do_declaration_node(l22::declaration_node *const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
-  std::cout << "No frame size calculator" << std::endl;
   _localsize += node->type()->size();
-  std::cout << "Saindo do size calculator" << std::endl;
 }
 
 void l22::frame_size_calculator::do_function_definition_node(l22::function_definition_node *const node, int lvl) {

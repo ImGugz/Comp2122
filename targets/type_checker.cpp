@@ -14,7 +14,7 @@ static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
     return cdk::to_string(typed_node);
   } else {
     std::ostringstream strlit;
-    strlit << "function with output " << cdk::to_string(aux->output(0))<< " and inputs " << "(";
+    strlit << "function with output " << type_name(aux->output(0))<< " and inputs " << "(";
     for (size_t i = 0; i < aux->input_length(); i++) {
       strlit << type_name(aux->input(i)) << ",";
     }
@@ -425,6 +425,7 @@ void l22::type_checker::do_program_node(l22::program_node *const node, int lvl) 
   auto cdkInt = cdk::primitive_type::create(4, cdk::TYPE_INT);
   std::vector<std::shared_ptr<cdk::basic_type>> input_types;
   auto mainat = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "@", 0);
+  std::cout << "Inserted local function with type " << type_name(mainat->type()) << std::endl;
   if (_symtab.find_local(mainat->name())) {
     _symtab.replace(mainat->name(), mainat);
   } else {
@@ -528,6 +529,7 @@ void l22::type_checker::do_function_definition_node(l22::function_definition_nod
   auto function = l22::make_symbol(node->type(), "@", 0);
   //function->set_input_types(input_types);
   //function->set_output_type(node->outputType());
+  std::cout << "Inserted local function with type " << type_name(function->type()) << std::endl;
 
   // NOTE: _symtab.replace_local has a delete bug
   if (_symtab.find_local(function->name())) {
@@ -563,7 +565,9 @@ void l22::type_checker::do_return_node(l22::return_node * const node, int lvl) {
   } else {
 
     if (node->retval()) {
+      _symtab.print_table();
       std::shared_ptr<cdk::functional_type> rettype = cdk::functional_type::cast(symbol->type());
+      std::cout << "Aqui está o tipo de retorno: " << type_name(rettype) << std::endl;
       if (rettype->output() != nullptr && rettype->output(0)->name() == cdk::TYPE_VOID) {
         std::cout << "RETURNING FROM " << symbol->name() << std::endl;
         throw std::string("return value specified for void function.");
@@ -701,7 +705,9 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
       }
 
     } else {
+      std::cout << "A fazer uma declaração" << std::endl;
       node->type(node->initializer()->type());
+      std::cout << "Ficou com tipo " << type_name(node->type()) << std::endl;
     }
 
   }
@@ -752,6 +758,7 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
     }
   } else {
     _symtab.insert(id, symbol);
+    std::cout << "Inserted symbol" << id << std::endl;
   } 
 
   _parent->set_new_symbol(symbol);
@@ -764,7 +771,7 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
     symbol->set_foreign(true);
   }
 
-  // _symtab.print_table();
+  ////symtab.print_table();
 }
 
 
