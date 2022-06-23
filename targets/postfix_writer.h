@@ -24,7 +24,8 @@ namespace l22 {
 
     bool _inFunctionBody;
     bool _inFunctionArgs;
-    std::vector<std::string> _external_functions;
+    bool _returnSeen;
+    std::set<std::string> _external_functions;
     std::vector<std::shared_ptr<l22::symbol>> _fun_symbols;
     std::vector<std::string> _return_labels;
     int _offset;
@@ -45,7 +46,7 @@ namespace l22 {
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab,
                    cdk::basic_postfix_emitter &pf) :
         basic_ast_visitor(compiler), _symtab(symtab), _pf(pf), _lbl(0),
-        _inFunctionBody(false), _inFunctionArgs(false), _offset(0), _first_declarations(true), _possible_extern_call(false) {
+        _inFunctionBody(false), _inFunctionArgs(false), _returnSeen(false),  _offset(0), _first_declarations(true), _possible_extern_call(false) {
     }
 
   public:
