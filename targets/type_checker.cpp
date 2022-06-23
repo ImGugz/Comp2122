@@ -40,18 +40,18 @@ static bool compatible_pointed_types(std::shared_ptr<cdk::basic_type> ltype, std
 
 // NOTE: abstract stuff in here
 static bool compatible_function_types(std::shared_ptr<cdk::functional_type> ltype, std::shared_ptr<cdk::functional_type> rtype) {
-  if (ltype->output()->name() == cdk::TYPE_POINTER) {
+  if (ltype->output(0)->name() == cdk::TYPE_POINTER) {
     // NOTE: this is a little weird, but we do know that nullptr does not exist in an output type of a funtype
-    if (!(rtype->output()->name() == cdk::TYPE_POINTER && compatible_pointed_types(ltype->output(), rtype->output()))) {
+    if (!(rtype->output(0)->name() == cdk::TYPE_POINTER && compatible_pointed_types(ltype->output(0), rtype->output(0)))) {
       return false;
     }
-  } else if (ltype->output()->name() == cdk::TYPE_FUNCTIONAL) {
-     if (!(rtype->output()->name() == cdk::TYPE_FUNCTIONAL && 
-          compatible_function_types(cdk::functional_type::cast(ltype->output()), cdk::functional_type::cast(rtype->output())))) {
+  } else if (ltype->output(0)->name() == cdk::TYPE_FUNCTIONAL) {
+     if (!(rtype->output(0)->name() == cdk::TYPE_FUNCTIONAL && 
+          compatible_function_types(cdk::functional_type::cast(ltype->output(0)), cdk::functional_type::cast(rtype->output(0))))) {
       return false;
     }
     // NOTE: check for each primitive type?
-  } else if ((ltype->output()->name() != rtype->output()->name())) {
+  } else if ((ltype->output(0)->name() != rtype->output(0)->name())) {
     return false;
   }
 
@@ -475,7 +475,7 @@ void l22::type_checker::do_function_call_node(l22::function_call_node * const no
       throw std::string("recursive call outside function");
     }
     input_types = cdk::functional_type::cast(symbol->type())->input()->components();
-    output_type = cdk::functional_type::cast(symbol->type())->output();
+    output_type = cdk::functional_type::cast(symbol->type())->output(0);
   } else {                              // non recursive call: just check functional type
     node->identifier()->accept(this, lvl + 2);
     if (!(node->identifier()->type()->name() == cdk::TYPE_FUNCTIONAL)) {
@@ -611,8 +611,9 @@ void l22::type_checker::do_again_node(l22::again_node * const node, int lvl) {
 void l22::type_checker::do_index_node(l22::index_node * const node, int lvl) {
   ASSERT_UNSPEC;
 
+  node->base()->accept(this, lvl + 2);
   // NOTE: Why check null base (see og & gr8)??
-  std::shared_ptr<cdk::reference_type> basetype;
+  std::shared_ptr<cdk::reference_type> basetype = cdk::reference_type::cast(node->base()->type());
   if (!node->base()->is_typed(cdk::TYPE_POINTER)) throw std::string("pointer expression expected in index left-value");
 
   node->index()->accept(this, lvl + 2);
