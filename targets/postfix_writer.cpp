@@ -357,14 +357,8 @@ void l22::postfix_writer::do_variable_node(cdk::variable_node *const node, int l
   // we might be doing a function call of a function that we do not know a prior to be extern of local to this module
   if (_symbols_to_declare.front().find(id) != _symbols_to_declare.front().end()) {
     _doubt_symbol = symbol->name();
-  } else if (symbol->is_extern()) {
+  } else if (symbol->is_extern() || symbol->is_foreign()) {
     _extern_label = symbol->name();
-  } else if (symbol->is_foreign()) {
-    if (symbol->name() == "argc") {
-      //os() << "Devo ir para aqui no argc" << std::endl;
-      //std::cout << "Devo ir para aqui no argc" << std::endl;
-      _pf.LOCAL(8);
-    }
   } else if (symbol->global()) {
      std::cout << "É global" << std::endl;
     _pf.ADDR(symbol->name());
@@ -381,9 +375,9 @@ void l22::postfix_writer::do_rvalue_node(cdk::rvalue_node *const node, int lvl) 
   if (node->is_typed(cdk::TYPE_DOUBLE)) {
     _pf.LDDOUBLE();
   } else {
-     //os() << "Devo ir para aqui a ler o argc" << std::endl;
-     //std::cout << "Devo ir para aqui a ler o argc" << std::endl;
-    _pf.LDINT();
+    if (_extern_label.empty()) {
+      _pf.LDINT();
+    }
   }
   
 }
@@ -432,13 +426,8 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
 
   for (std::string name : _symbols_to_declare.back()) {
     auto symbol = _symtab.find(name, 0);
-    if (symbol->is_extern()) {
-      if (symbol->name() == "argc") {
-        symbol->set_offset(0);
-        symbol->set_extern(false);
-      } else {
-        _external_functions.push_back(name);
-      }
+    if (symbol->is_extern() || symbol->is_foreign()) {
+      _external_functions.push_back(name);
     } else {
       _pf.BSS();
       _pf.ALIGN();
@@ -539,7 +528,7 @@ void l22::postfix_writer::do_block_node(l22::block_node * const node, int lvl) {
   if (node->declarations()) node->declarations()->accept(this, lvl + 2);
   for (std::string name : _symbols_to_declare.back()) {
     auto symbol = _symtab.find(name, 0);
-    if (symbol->is_extern()) {
+    if (symbol->is_extern() || symbol->is_foreign()) {
       _external_functions.push_back(name);
     } else {
       _pf.BSS();
@@ -714,7 +703,7 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
       _doubt_symbols.push_back(_doubt_symbol);
     } else {
        //os() << "A fazer branch!" << std::endl;
-       //std::cout << "A fazer branch!" << std::endl;
+      std::cout << "A fazer branch!" << std::endl;
       _pf.BRANCH();
     }
     _extern_label.clear();
