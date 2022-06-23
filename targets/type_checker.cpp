@@ -406,10 +406,10 @@ void l22::type_checker::do_assignment_node(cdk::assignment_node *const node, int
 //---------------------------------------------------------------------------
 
 void l22::type_checker::do_program_node(l22::program_node *const node, int lvl) {
-  auto mainfun = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "_main", 0);
+  auto mainfun = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "_main", 0, -1);
   auto cdkInt = cdk::primitive_type::create(4, cdk::TYPE_INT);
   std::vector<std::shared_ptr<cdk::basic_type>> input_types;
-  auto mainat = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "@", 0);
+  auto mainat = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "@", 0, -1);
   if (_symtab.find_local(mainat->name())) {
     _symtab.replace(mainat->name(), mainat);
   } else {
@@ -510,7 +510,7 @@ void l22::type_checker::do_function_definition_node(l22::function_definition_nod
   }
   node->type(cdk::functional_type::create(input_types, node->outputType()));
 
-  auto function = l22::make_symbol(node->type(), "@", 0);
+  auto function = l22::make_symbol(node->type(), "@", 0, -1);
   //function->set_input_types(input_types);
   //function->set_output_type(node->outputType());
 
@@ -695,15 +695,16 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
     id = node->identifier();
   }
 
-  auto symbol = l22::make_symbol(node->type(), id, (bool)node->initializer());
+  std::cout << "INSERTING " << id << " WITH QUALIFIER PUBLIC: " << (node->qualifier() == tPUBLIC) << std::endl;
+  auto symbol = l22::make_symbol(node->type(), id, (bool)node->initializer(), node->qualifier());
   std::shared_ptr<l22::symbol> previous = _symtab.find_local(symbol->name());
   //_symtab.print_table();
 
-  if (previous) { // Function redeclaration
+  if (previous) { // Redeclaration
     if (previous->type()->name() == cdk::TYPE_FUNCTIONAL && 
         symbol->type()->name() == cdk::TYPE_FUNCTIONAL && 
         compatible_function_types(cdk::functional_type::cast(previous->type()), cdk::functional_type::cast(symbol->type()))) {
-        _symtab.replace(symbol->name(), symbol);
+          _symtab.replace(symbol->name(), symbol);
         //if (previous->is_decl()) {  
         //   std::cout << "Redeclaração de função!" << std::endl;
         //  symbol->set_decl(true);
@@ -737,12 +738,10 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
   } 
 
   _parent->set_new_symbol(symbol);
-  //std::cout << "After seeing new symbol in type checker: " << std::endl;
-  //_symtab.print_table();
+  std::cout << "After seeing new symbol in type checker: " << std::endl;
+  _symtab.print_table();
 
-  if (node->qualifier() == tUSE) {
-    symbol->set_extern(true);
-  } else if (node->qualifier() == tFOREIGN) {
+  if (node->qualifier() == tFOREIGN) {
     symbol->set_foreign(true);
   }
 
