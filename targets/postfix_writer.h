@@ -36,7 +36,7 @@ namespace l22 {
     std::string _doubt_symbol;
 
     bool _first_declarations;
-    bool _possible_extern_call;
+    //bool _possible_extern_call;
     std::string _extern_label;
     //std::shared_ptr<l22::symbol> _symbol_to_define;
     //std::vector<std::shared_ptr<cdk::basic_type>> _intended_ret_types;
@@ -46,7 +46,7 @@ namespace l22 {
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab,
                    cdk::basic_postfix_emitter &pf) :
         basic_ast_visitor(compiler), _symtab(symtab), _pf(pf), _lbl(0),
-        _inFunctionBody(false), _inFunctionArgs(false), _returnSeen(false),  _offset(0), _first_declarations(true), _possible_extern_call(false) {
+        _inFunctionBody(false), _inFunctionArgs(false), _returnSeen(false),  _offset(0), _first_declarations(true) {
     }
 
   public:

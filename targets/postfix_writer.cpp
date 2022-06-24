@@ -502,6 +502,7 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
   std::cout << "FRAME SIZE RETURNED " << lsc.localsize() << std::endl;
   _pf.ENTER(lsc.localsize());
 
+  bool oldReturnSeen = _returnSeen;
   _returnSeen = false;
   _inFunctionBody = true;
   if (node->statements()) {
@@ -513,6 +514,7 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
    std::cout << "A sair do programa\n" << std::endl;
   _return_labels.pop_back();
   if (!_returnSeen) {
+    _pf.INT(0);
     _pf.STFVAL32();
   }
   _pf.LEAVE();
@@ -523,6 +525,7 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
     _pf.EXTERN(ext);
   }
   _external_functions.clear();
+  _returnSeen = oldReturnSeen;
 }
 
 void l22::postfix_writer::do_block_node(l22::block_node * const node, int lvl) {
@@ -744,7 +747,7 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
   }
 
   _extern_label.clear();
-  _doubt_symbol.clear();
+  //_doubt_symbol.clear();
   //_intended_ret_types.pop_back();
 }
 
