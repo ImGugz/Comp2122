@@ -408,6 +408,7 @@ void l22::type_checker::do_assignment_node(cdk::assignment_node *const node, int
 
 void l22::type_checker::do_program_node(l22::program_node *const node, int lvl) {
   auto mainfun = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "_main", 0, tPRIVATE);
+  mainfun->set_main(true);
   auto cdkInt = cdk::primitive_type::create(4, cdk::TYPE_INT);
   std::vector<std::shared_ptr<cdk::basic_type>> input_types;
   auto mainat = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "@", 0, tPRIVATE);
@@ -508,7 +509,7 @@ void l22::type_checker::do_function_call_node(l22::function_call_node * const no
 
 
 void l22::type_checker::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
-  ASSERT_UNSPEC;
+
   std::vector<std::shared_ptr<cdk::basic_type>> input_types;
   for (size_t ax = 0; ax < node->arguments()->size(); ax++) {
     input_types.push_back(node->argument(ax)->type());

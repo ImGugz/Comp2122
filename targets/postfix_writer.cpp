@@ -680,7 +680,7 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   _symtab.push();
   node->accept(&lsc, lvl);
   _symtab.pop();
- 
+  
   _pf.ENTER(lsc.localsize());
 
   _offset = 0; // Prepare for local variables
@@ -724,8 +724,12 @@ void l22::postfix_writer::do_return_node(l22::return_node * const node, int lvl)
   if (outputType->name() != cdk::TYPE_VOID) {
     node->retval()->accept(this, lvl + 2);
     if (outputType->name() == cdk::TYPE_INT) {
-      _pf.I2D();
-      _pf.STFVAL64();
+      if (!currFun->is_main()) {
+        _pf.I2D();
+        _pf.STFVAL64();
+      } else {
+        _pf.STFVAL32();
+      }
     }
     else if (outputType->name() == cdk::TYPE_STRING || outputType->name() == cdk::TYPE_POINTER || 
              outputType->name() == cdk::TYPE_FUNCTIONAL) {
