@@ -25,7 +25,6 @@
 //}
 
 
-// NOTE: Check covariance regarding [void]
 static bool compatible_pointed_types(std::shared_ptr<cdk::basic_type> ltype, std::shared_ptr<cdk::basic_type> rtype) {
   auto lt = ltype;
   auto rt = rtype;
@@ -33,17 +32,13 @@ static bool compatible_pointed_types(std::shared_ptr<cdk::basic_type> ltype, std
     lt = cdk::reference_type::cast(lt)->referenced();
     rt= cdk::reference_type::cast(rt)->referenced();
   }
-  //bool compatible = (ft == rt) && (rtype == nullptr || (rtype != nullptr && ftype->name() == rtype->name()));
-
+  
   return rtype == nullptr || ltype->name() == rtype->name();
 }
 
-// NOTE: abstract stuff in here
 static bool compatible_function_types(std::shared_ptr<cdk::functional_type> ltype, std::shared_ptr<cdk::functional_type> rtype) {
   if (ltype->output(0)->name() == cdk::TYPE_POINTER) {
-    // NOTE: this is a little weird, but we do know that nullptr does not exist in an output type of a funtype
     if (!(rtype->output(0)->name() == cdk::TYPE_POINTER && compatible_pointed_types(ltype->output(0), rtype->output(0)))) {
-      //std::cout << "Falha 1" << std::endl;
       return false;
     }
   } else if (ltype->output(0)->name() == cdk::TYPE_FUNCTIONAL) {

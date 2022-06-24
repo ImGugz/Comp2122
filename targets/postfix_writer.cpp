@@ -13,12 +13,6 @@
 //--------------------------------------------------------------------------//
 
 void l22::postfix_writer::do_sequence_node(cdk::sequence_node *const node, int lvl) {
-  //std::cout << "SEQUENCE" << std::endl;
-  //if (_first_declarations) {
-  //  std::set<std::string> set_of_symbols;
-  //  _symbols_to_declare.push_back(set_of_symbols);
-  //  _first_declarations = false;
-  //}
   for (size_t ix = 0; ix < node->size(); ++ix) {
     node->node(ix)->accept(this, lvl);
   }
@@ -33,18 +27,15 @@ void l22::postfix_writer::do_data_node(cdk::data_node *const node, int lvl) {}
 //--------------------------------------------------------------------------//
 
 void l22::postfix_writer::do_integer_node(cdk::integer_node *const node, int lvl) {
-  //std::cout << "INTEGER" << std::endl;
   if (_inFunctionBody) {
     _pf.INT(node->value());
-    //std::cout << " this is the allocation " << node->value() << std::endl;
   } else {
     _pf.SINT(node->value());
   }
 }
 
 void l22::postfix_writer::do_double_node(cdk::double_node *const node, int lvl) {
-  //std::cout << "DOUBLE" << std::endl;
-
+  
   // Hack: cdk blindly returns to unnamed text segment
   std::string lbl = mklbl(++_lbl);
   if (_inFunctionBody) {
@@ -72,7 +63,7 @@ void l22::postfix_writer::do_double_node(cdk::double_node *const node, int lvl) 
 }
 
 void l22::postfix_writer::do_string_node(cdk::string_node *const node, int lvl) {
-  //std::cout << "STRING" << std::endl;
+
   std::string lbl = mklbl(++_lbl);
   _pf.RODATA();
   _pf.ALIGN();
@@ -88,7 +79,6 @@ void l22::postfix_writer::do_string_node(cdk::string_node *const node, int lvl) 
 }
 
 void l22::postfix_writer::do_nullptr_node(l22::nullptr_node *const node, int lvl) {
-  //std::cout << "NULLPTR" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
   if (_inFunctionBody) {
     _pf.INT(0);
@@ -124,7 +114,6 @@ void l22::postfix_writer::do_not_node(cdk::not_node *const node, int lvl) {
 //--------------------------------------------------------------------------//
 
 void l22::postfix_writer::do_add_node(cdk::add_node *const node, int lvl) {
-  //std::cout << "ADD" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
 
   node->left()->accept(this, lvl + 2);
@@ -153,7 +142,7 @@ void l22::postfix_writer::do_add_node(cdk::add_node *const node, int lvl) {
 }
 
 void l22::postfix_writer::do_sub_node(cdk::sub_node *const node, int lvl) {
-  //std::cout << "SUB" << std::endl;
+
   node->left()->accept(this, lvl + 2);
   if (node->is_typed(cdk::TYPE_DOUBLE) && node->left()->is_typed(cdk::TYPE_INT)) {
     _pf.I2D();
@@ -180,7 +169,7 @@ void l22::postfix_writer::do_sub_node(cdk::sub_node *const node, int lvl) {
 }
 
 void l22::postfix_writer::do_mul_node(cdk::mul_node *const node, int lvl) {
-  //std::cout << "MUL" << std::endl;
+ 
   ASSERT_SAFE_EXPRESSIONS;
   node->left()->accept(this, lvl + 2);
   if (node->is_typed(cdk::TYPE_DOUBLE) && node->left()->is_typed(cdk::TYPE_INT)) {
@@ -200,7 +189,7 @@ void l22::postfix_writer::do_mul_node(cdk::mul_node *const node, int lvl) {
 }
 
 void l22::postfix_writer::do_div_node(cdk::div_node *const node, int lvl) {
-  //std::cout << "DIV" << std::endl;
+ 
   ASSERT_SAFE_EXPRESSIONS;
   node->left()->accept(this, lvl + 2);
   if (node->is_typed(cdk::TYPE_DOUBLE) && node->left()->is_typed(cdk::TYPE_INT)) {
@@ -220,7 +209,7 @@ void l22::postfix_writer::do_div_node(cdk::div_node *const node, int lvl) {
 }
 
 void l22::postfix_writer::do_mod_node(cdk::mod_node *const node, int lvl) {
-  //std::cout << "MOD" << std::endl;
+ 
   ASSERT_SAFE_EXPRESSIONS;
   ASSERT_SAFE_EXPRESSIONS;
   node->left()->accept(this, lvl + 2);
@@ -233,7 +222,7 @@ void l22::postfix_writer::do_mod_node(cdk::mod_node *const node, int lvl) {
 //--------------------------------------------------------------------------//
 
 void l22::postfix_writer::do_lt_node(cdk::lt_node *const node, int lvl) {
-  //std::cout << "LT" << std::endl;
+ 
   ASSERT_SAFE_EXPRESSIONS;
   node->left()->accept(this, lvl + 2);
   if (node->left()->is_typed(cdk::TYPE_INT) && node->right()->is_typed(cdk::TYPE_DOUBLE)) {
@@ -247,7 +236,7 @@ void l22::postfix_writer::do_lt_node(cdk::lt_node *const node, int lvl) {
 }
 
 void l22::postfix_writer::do_le_node(cdk::le_node *const node, int lvl) {
-  //std::cout << "LE" << std::endl;
+ 
   ASSERT_SAFE_EXPRESSIONS;
   node->left()->accept(this, lvl + 2);
   if (node->left()->is_typed(cdk::TYPE_INT) && node->right()->is_typed(cdk::TYPE_DOUBLE)) {
@@ -261,7 +250,7 @@ void l22::postfix_writer::do_le_node(cdk::le_node *const node, int lvl) {
 }
 
 void l22::postfix_writer::do_ge_node(cdk::ge_node *const node, int lvl) {
-  //std::cout << "GE" << std::endl;
+ 
   ASSERT_SAFE_EXPRESSIONS;
   node->left()->accept(this, lvl + 2);
   if (node->left()->is_typed(cdk::TYPE_INT) && node->right()->is_typed(cdk::TYPE_DOUBLE)) {
@@ -349,16 +338,7 @@ void l22::postfix_writer::do_variable_node(cdk::variable_node *const node, int l
   ASSERT_SAFE_EXPRESSIONS;
   const std::string &id = node->name();
   auto symbol = _symtab.find(id);
-  // if (_possible_definition && !symbol->is_initialized() && (lvl = _lvl + 2)) { // This is a little hack assignment -> lval = expr
-  //  //std::cout << "Will finally initialize symbol " + id << std::endl;
-  //  _symbol_to_define = symbol;
-  //}
-
-  // we might be doing a function call of a function that we do not know a prior to be extern of local to this module
-  // if (_symbols_to_declare.front().find(id) != _symbols_to_declare.front().end()) {
-  //   _doubt_symbol = symbol->name();
-  // } 
-  // else 
+ 
   if (symbol->is_foreign()) {
     _extern_label = symbol->name();
   } else if (symbol->global()) {
@@ -387,17 +367,8 @@ void l22::postfix_writer::do_rvalue_node(cdk::rvalue_node *const node, int lvl) 
 void l22::postfix_writer::do_assignment_node(cdk::assignment_node *const node, int lvl) {
   //std::cout << "ASSIGNMENT" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
-  //_symbol_to_define = nullptr;
-  //_possible_definition = true;
-  //_lvl = lvl;
-  //os() << "Começou aqui" << std::endl;
+ 
   node->rvalue()->accept(this, lvl + 2);
-  //if (_symbol_to_define != nullptr) {
-  //  //std::cout << "Here it goes: " + _symbol_to_define->name() << std::endl;
-  //  do_initializer(node->rvalue(), lvl, _symbol_to_define);
-  //  _symbol_to_define->set_initialized(true);
-  //  _symbol_to_define = nullptr;
-  //}
   if (node->is_typed(cdk::TYPE_DOUBLE)) {
     if (node->rvalue()->is_typed(cdk::TYPE_INT)) {
       _pf.I2D();
@@ -411,11 +382,9 @@ void l22::postfix_writer::do_assignment_node(cdk::assignment_node *const node, i
   if (node->is_typed(cdk::TYPE_DOUBLE)) {
     _pf.STDOUBLE();
   } else {
-     //std::cout << "A função é um ponteiro para inteiro" << std::endl;
     _pf.STINT();
   }
-  //) << "Acabou aqui" << std::endl;
-  //_possible_definition = false;
+ 
 }
 
 //---------------------------------------------------------------------------
@@ -436,61 +405,13 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
       _pf.SALLOC(symbol->type()->size());    
     }
   }
-  //_symbols_to_declare.pop_back();
-
-  // for (std::string funlabel : _doubt_symbols) {
-  //   auto symbol = _symtab.find(funlabel, 0);
-  //   _pf.TEXT();
-  //   _pf.ALIGN();
-  //   _pf.LABEL("_" + funlabel);
-
-
-  //   size_t argsSize = 0;
-  //   size_t sizeSum = 0;
-
-  //   std::vector<std::shared_ptr<cdk::basic_type>> inputTypes = cdk::functional_type::cast(symbol->type())->input()->components();
-  //   std::shared_ptr<cdk::basic_type> outputType = cdk::functional_type::cast(symbol->type())->output(0);
-
-  //   for (int ix = inputTypes.size() - 1; ix >= 0; --ix) {
-  //     argsSize += inputTypes[ix]->size();
-  //   }
-  //   for (int ix = inputTypes.size() - 1; ix >= 0; --ix) {
-  //     sizeSum += inputTypes[ix]->size();
-  //     _pf.LOCAL(8 + argsSize - sizeSum);
-  //     if (inputTypes[ix]->name() == cdk::TYPE_DOUBLE) {
-  //       _pf.LDDOUBLE();
-  //     } else {
-  //       _pf.LDFLOAT();
-  //     }
-  //   }
-
-  //   if (symbol->is_extern()) {
-  //     _pf.CALL(funlabel);
-  //   } else {
-  //     _pf.SADDR(funlabel);
-  //     _pf.BRANCH();
-  //   }
-
-  //   if (argsSize != 0) {
-  //   _pf.TRASH(argsSize);
-  //   }
-    
-  //   if (outputType->name() == cdk::TYPE_DOUBLE) {
-  //     _pf.LDFVAL64();
-  //   } else {
-  //     _pf.LDFVAL32();
-  //   }
-
-  //   _pf.LEAVE();
-  //   _pf.RET();
-  // }
-
+  
   symbol = new_symbol();
   _fun_symbols.push_back(symbol);
   reset_new_symbol();
 
   _return_labels.push_back("_main");
-  //std::cout << "Ao início do programa\n" << std::endl;
+  
   _symtab.push(); // _level++; new context;
   _pf.TEXT(_return_labels.back());
   _pf.ALIGN();
@@ -498,8 +419,12 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
   _pf.LABEL("_main");
 
   frame_size_calculator lsc(_compiler, _symtab, symbol);
+
+  // trick to render all inserted symbols during this visit useless
+  _symtab.push();
   node->accept(&lsc, lvl);
-  //std::cout << "FRAME SIZE RETURNED " << lsc.localsize() << std::endl;
+  _symtab.pop();
+ 
   _pf.ENTER(lsc.localsize());
 
   bool oldReturnSeen = _returnSeen;
@@ -511,7 +436,7 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
   _inFunctionBody = false;
 
   _symtab.pop();
-   //std::cout << "A sair do programa\n" << std::endl;
+  
   _return_labels.pop_back();
   if (!_returnSeen) {
     _pf.INT(0);
@@ -531,24 +456,10 @@ void l22::postfix_writer::do_program_node(l22::program_node *const node, int lvl
 void l22::postfix_writer::do_block_node(l22::block_node * const node, int lvl) {
   //std::cout << "BLOCK" << std::endl;
   std::set<std::string> symbols;
-  //_symbols_to_declare.push_back(symbols);
-   //std::cout << "Ao inicio de um bloco\n" << std::endl;
+
   _symtab.push();
   if (node->declarations()) node->declarations()->accept(this, lvl + 2);
-  //for (std::string name : _symbols_to_declare.back()) {
-  //  auto symbol = _symtab.find(name, 0);
-  //  if (symbol->is_extern() || symbol->is_foreign()) {
-  //    _external_functions.insert(name);
-  //  } else {
-  //    _pf.BSS();
-  //    _pf.ALIGN();
-  //    _pf.LABEL(name);
-  //    _pf.SALLOC(symbol->type()->size());    
-  //  }
-  //}
-  //_symbols_to_declare.pop_back();
   if (node->instructions()) node->instructions()->accept(this, lvl + 2);
-   //std::cout << "Ao fim de um bloco\n" << std::endl;
   _symtab.pop();
 }
 
@@ -619,7 +530,6 @@ void l22::postfix_writer::do_while_node(l22::while_node *const node, int lvl) {
   _whileCond.push(++_lbl);
   _whileEnd.push(++_lbl);
 
-   //std::cout << "Ao inicio de um while\n" << std::endl;
   _symtab.push(); // new context
 
   _pf.ALIGN();
@@ -633,7 +543,6 @@ void l22::postfix_writer::do_while_node(l22::while_node *const node, int lvl) {
   _pf.LABEL(mklbl(_whileEnd.top()));
 
   _symtab.pop();
-   //std::cout << "Ao fim de um while\n" << std::endl;
   
   _whileEnd.pop();
   _whileCond.pop();
@@ -675,16 +584,13 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
   //std::cout << "FUNCTION CALL" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
 
-  // Note that at this point we have made sure that the funcion call node is
   std::vector<std::shared_ptr<cdk::basic_type>> inputTypes;
 
   if (node->identifier()) {   // non recursive case: formal types are encolsed in identifier type!
     inputTypes = cdk::functional_type::cast(node->identifier()->type())->input()->components();
-    //_intended_ret_types.push_back( cdk::functional_type::cast(node->identifier()->type())->output(0));
   } else {                     // recursive case: must fetch formal types from current function symbol
     auto currFun = _fun_symbols.back();
     inputTypes = cdk::functional_type::cast(currFun->type())->input()->components();
-    //_intended_ret_types.push_back(cdk::functional_type::cast(nullptr));
   }
 
   // Remeber that at this point we have made sure that actuals and formals are compatible
@@ -701,27 +607,14 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
     }
   }
 
-
-  //std::cout<< "Tamanho dos argumentos: " << argsSize <<std::endl;
-
   if (node->identifier()) {  // non recursive case: need to get address value of the pointer and jump to it
-    //_possible_extern_call = true;
     _extern_label.clear();
     node->identifier()->accept(this, lvl + 2);
     if (!_extern_label.empty()) {
       _pf.CALL(_extern_label);
-    } 
-    // else if (!_doubt_symbol.empty()) {
-    //   //std::cout<< "Na dúvida" <<std::endl;
-    //   _pf.CALL("_" + _doubt_symbol);
-    //   _doubt_symbols.push_back(_doubt_symbol);
-    // } 
-    else {
-       //os() << "A fazer branch!" << std::endl;
+    } else {
       _pf.BRANCH();
     }
-   
-    //_possible_extern_call = false;
   } else {  // recursive case: just call last pushed function label
     _pf.CALL(_return_labels.back());
   }
@@ -730,9 +623,8 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
     _pf.TRASH(argsSize);
   }
   
-  // changed this
+  // By convention, all int return types are doubles, it is the calee who must properly cast them
   if (node->is_typed(cdk::TYPE_INT)) {
-    //std::cout << "A converter" << std::endl;
     if (!_extern_label.empty()) {
       _pf.LDFVAL32();
     } else {
@@ -742,37 +634,26 @@ void l22::postfix_writer::do_function_call_node(l22::function_call_node * const 
   } else if (node->is_typed(cdk::TYPE_POINTER) || node->is_typed(cdk::TYPE_STRING) || node->is_typed(cdk::TYPE_FUNCTIONAL)) {
     _pf.LDFVAL32();
   } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
-    //std::cout << "Should be here" << std::endl;
     _pf.LDFVAL64();
   }
 
   _extern_label.clear();
-  //_doubt_symbol.clear();
-  //_intended_ret_types.pop_back();
 }
 
 void l22::postfix_writer::do_function_definition_node(l22::function_definition_node * const node, int lvl) {
 
   //std::cout << "FUNCTION DEFINITION" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
-  bool publicFun = false; // TODO: OPTIMIZE THIS
-  std::string funName; // TODO: OPTIMIZE THIS
+  bool publicFun = false; 
+  std::string funName; 
   auto symbol = new_symbol();
 
-  ////_symtab.print_table();
-
   if (symbol) {
-    //std::cout << "YO?" << std::endl;
     _fun_symbols.push_back(symbol);
     reset_new_symbol();
-  } else {
-    //_symtab.print_table();
-    //std::cout << "NO?" << std::endl;
-  }
+  } 
   
   _offset = 8;
-  //std::cout << "Ao inicio da definicao de funcao: " << std::endl;
-   //_symtab.print_table();
   _symtab.push();
 
   if(node->arguments()) {
@@ -794,11 +675,12 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   }
   _pf.LABEL(lbl);
   frame_size_calculator lsc(_compiler, _symtab, symbol);
+
+  // trick to render all inserted symbols during this visit useless
   _symtab.push();
-  //std::cout << "ENTERING LSC " << lsc.localsize() << std::endl;
   node->accept(&lsc, lvl);
   _symtab.pop();
-  //std::cout << "FRAME SIZE RETURNED " << lsc.localsize() << std::endl;
+ 
   _pf.ENTER(lsc.localsize());
 
   _offset = 0; // Prepare for local variables
@@ -808,13 +690,11 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
   if (node->block()) {
     node->block()->accept(this, lvl + 4);
   }
-  //_table();
+ 
   _inFunctionBody = _wasInFunctionBody;
 
   _symtab.pop();
-  //std::cout << "Depois da definição da função: " << std::endl;
-  //_symtab.print_table();
-  //_table();
+ 
   if (!_returnSeen) {
     _pf.LEAVE();
     _pf.RET();
@@ -827,16 +707,9 @@ void l22::postfix_writer::do_function_definition_node(l22::function_definition_n
 
   // Since a function definition is an expression, the last line must be its value (i.e., the address of its code)
   if (_inFunctionBody) {
-    // local variable initializer
-    // //std::cout << "Devia estar aqui" << std::endl;
     _pf.TEXT(_return_labels.back());
     _pf.ADDR(lbl);
   } 
-  //else {
-    // global variable initializer
-    //_pf.DATA();
-    //_pf.SADDR(lbl);
-  //}
 
   _fun_label = lbl;
 
@@ -856,7 +729,6 @@ void l22::postfix_writer::do_return_node(l22::return_node * const node, int lvl)
     }
     else if (outputType->name() == cdk::TYPE_STRING || outputType->name() == cdk::TYPE_POINTER || 
              outputType->name() == cdk::TYPE_FUNCTIONAL) {
-      //std::cout << "Devia estar aqui a retornar" << std::endl;
       _pf.STFVAL32();
     }
     else if (outputType->name() == cdk::TYPE_DOUBLE) {
@@ -898,7 +770,6 @@ void l22::postfix_writer::do_again_node(l22::again_node * const node, int lvl) {
 void l22::postfix_writer::do_index_node(l22::index_node * const node, int lvl) {
   //std::cout << "INDEX" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
-  //) << "Indice aqui" << std::endl;
   node->base()->accept(this, lvl);
   node->index()->accept(this, lvl);
   _pf.INT(node->type()->size());
@@ -942,14 +813,11 @@ void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node
   //std::cout << "DECLARATION" << std::endl;
   ASSERT_SAFE_EXPRESSIONS;
   auto id = node->identifier();
-  //std::cout << "(DEBUG) _offset: " << _offset << std::endl;
   int offset = 0, typesize = node->type()->size();
   if (_inFunctionArgs) {
-    //std::cout << "A ver cenas nos argumentos" << std::endl;
     offset = _offset;
     _offset += typesize;
   } else if (_inFunctionBody) {
-     //std::cout << "A ver cenas no corpo" << std::endl;
     _offset -= typesize;
     offset = _offset;
   } else {
@@ -969,176 +837,75 @@ void l22::postfix_writer::do_declaration_node(l22::declaration_node * const node
 
   if (node->initializer()) {
      do_initializer(node->initializer(), lvl, symbol);
-     //symbol->set_initialized(true);
   } 
-
-  //symbol->set_decl(true);
-
-  //if (_inFunctionBody) {
-  //  if (node->initializer()) { // var x = a
-  //    node->initializer()->accept(this, lvl);
-  //    if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_STRING) || node->is_typed(cdk::TYPE_POINTER)) {
-  //      _pf.LOCAL(symbol->offset());
-  //      _pf.STINT();
-  //    } else if(node->is_typed(cdk::TYPE_DOUBLE)) {
-  //      if (node->initializer()->is_typed(cdk::TYPE_INT)) {
-  //        _pf.I2D();
-  //      }
-  //      _pf.LOCAL(symbol->offset());
-  //      _pf.STDOUBLE();
-  //    } else {
-  //      std::cerr << "UNKNOWN DECLARATION NODE TYPE" << std::endl;
-  //      return;
-  //    }
-  //  }
-  //} else {
-  //  if (!node->initializer()) { // int x
-  //    _pf.BSS();
-  //    _pf.ALIGN();
-  //    _pf.LABEL(id);
-  //    _pf.SALLOC(typesize);
-  //  } else { // e.g int x = 4 
-      //if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_DOUBLE) || node->is_typed(cdk::TYPE_POINTER)) {
-      //  _pf.DATA();
-      //  _pf.ALIGN();
-      //  _pf.LABEL(id);
-      //  if (node->is_typed(cdk::TYPE_INT)) {
-      //    node->initializer()->accept(this, lvl);
-      //  } else if (node->is_typed(cdk::TYPE_POINTER)) {
-      //    node->initializer()->accept(this, lvl);
-      //  } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
-      //    if (node->initializer()->is_typed(cdk::TYPE_DOUBLE)) {
-      //      node->initializer()->accept(this, lvl);
-      //    }
-      //    else if (node->initializer()->is_typed(cdk::TYPE_INT)) {
-      //      cdk::integer_node *dclini = dynamic_cast<cdk::integer_node*>(node->initializer());
-      //      cdk::double_node ddi(dclini->lineno(), dclini->value());
-      //      ddi.accept(this, lvl);
-      //    } else {
-      //      std::cerr << "BAD DECLARATION FOR REAL VALUE" << std::endl;
-      //    }
-      //  }
-      //} else if (node->is_typed(cdk::TYPE_STRING)) {
-      //    _pf.DATA();
-      //    _pf.ALIGN();
-      //    _pf.LABEL(id);
-      //    node->initializer()->accept(this, lvl);
-      //} else if (node->is_typed(cdk::TYPE_FUNCTIONAL)) {
-      //  // we must push current symbol since it pertains to a function
-      //  _fun_symbols.push_back(symbol);
-      //  reset_new_symbol();
-      //  node->initializer()->accept(this, lvl);
-      //  _pf.DATA();
-      //  _pf.ALIGN();
-      //  _pf.LABEL(id);
-      //  std::string label = _fun_label;
-      //  _fun_label.clear();
-      //  _pf.SADDR(label);
-      //} else {
-      //  std::cerr << "UNEXPECTED INITIALIZER IN DECLARATION" << std::endl;
-      //}
-    //  do_initializer(node->initializer(), lvl, symbol);
-    //}
-    
-  //}
 
 }
 
 void l22::postfix_writer::do_initializer(cdk::expression_node * const node, int lvl, std::shared_ptr<l22::symbol> const symbol) {
-  //if (symbol->is_redcl()) {
-  //  //std::cout << "A definir simbolo"  + symbol->name() + " redeclarado..." << std::endl;
-  //  node->accept(this, lvl + 2);
-  //  if (symbol->is_typed(cdk::TYPE_DOUBLE)) {
-  //    if (node->is_typed(cdk::TYPE_INT)) {
-  //      _pf.I2D();
-  //    }
-  //    _pf.DUP64();
-  //  } else {
-  //    _pf.DUP32();
-  //  }
-//
-  //  if (symbol->global()) {
-  //    _pf.ADDR(symbol->name());
-  //  } else {
-  //    _pf.LOCAL(symbol->offset());
-  //  }
-//
-  //  if (symbol->is_typed(cdk::TYPE_DOUBLE)) {
-  //    _pf.STDOUBLE();
-  //  } else {
-  //    _pf.STINT();
-  //  }
-  //} else {
-    if (_inFunctionBody) {
-        node->accept(this, lvl);
-        if (symbol->is_typed(cdk::TYPE_INT) || symbol->is_typed(cdk::TYPE_STRING) || 
-            symbol->is_typed(cdk::TYPE_POINTER) || symbol->is_typed(cdk::TYPE_FUNCTIONAL)) {
-          _pf.LOCAL(symbol->offset());
-          _pf.STINT();
-        } else if(symbol->is_typed(cdk::TYPE_DOUBLE)) {
-          if (node->is_typed(cdk::TYPE_INT)) {
-            _pf.I2D();
-          }
-          _pf.LOCAL(symbol->offset());
-          _pf.STDOUBLE();
-        } else {
-          std::cerr << "UNKNOWN DECLARATION NODE TYPE" << std::endl;
-          return;
+ 
+  if (_inFunctionBody) {
+      node->accept(this, lvl);
+      if (symbol->is_typed(cdk::TYPE_INT) || symbol->is_typed(cdk::TYPE_STRING) || 
+          symbol->is_typed(cdk::TYPE_POINTER) || symbol->is_typed(cdk::TYPE_FUNCTIONAL)) {
+        _pf.LOCAL(symbol->offset());
+        _pf.STINT();
+      } else if(symbol->is_typed(cdk::TYPE_DOUBLE)) {
+        if (node->is_typed(cdk::TYPE_INT)) {
+          _pf.I2D();
         }
-    } else {
-      if (symbol->is_typed(cdk::TYPE_INT) || symbol->is_typed(cdk::TYPE_DOUBLE) || symbol->is_typed(cdk::TYPE_POINTER)) {
-        //std::cout << "########### 1 ############" << std::endl;
-        _pf.DATA();
-        _pf.ALIGN();
-        _pf.LABEL(symbol->name());
-        if (symbol->is_typed(cdk::TYPE_INT)) {
-          node->accept(this, lvl);
-        } else if (symbol->is_typed(cdk::TYPE_POINTER)) {
-          node->accept(this, lvl);
-        } else if (symbol->is_typed(cdk::TYPE_DOUBLE)) {
-          if (node->is_typed(cdk::TYPE_DOUBLE)) {
-            node->accept(this, lvl);
-          }
-          else if (node->is_typed(cdk::TYPE_INT)) {
-            cdk::integer_node *dclini = dynamic_cast<cdk::integer_node*>(node);
-            cdk::double_node ddi(dclini->lineno(), dclini->value());
-            ddi.accept(this, lvl);
-          } else {
-            std::cerr << "BAD DECLARATION FOR REAL VALUE" << std::endl;
-          }
-        }
-      } else if (symbol->is_typed(cdk::TYPE_STRING)) {
-        //std::cout << "########### 2 ############" << std::endl;
-          _pf.DATA();
-          _pf.ALIGN();
-          _pf.LABEL(symbol->name());
-          node->accept(this, lvl);
-      } else if (symbol->is_typed(cdk::TYPE_FUNCTIONAL)) {
-        // we must push current symbol since it pertains to a function
-        //std::cout << "########### 3 ############" << std::endl;
-        //std::cout << "-> 1: " << symbol->name() << std::endl;
-        //std::cout << "-> 1.1: " << (symbol->qualifier() == tPUBLIC) << std::endl;
-        _fun_symbols.push_back(symbol);
-        reset_new_symbol();
-        node->accept(this, lvl);
-        _pf.DATA();
-        if (_fun_symbols.back()->qualifier() == tPUBLIC) {
-          _pf.GLOBAL(_fun_symbols.back()->name(), _pf.OBJ());
-        }
-        _pf.ALIGN();
-        _pf.LABEL(symbol->name());
-        std::string label = _fun_label;
-        _fun_label.clear();
-        _pf.SADDR(label);
+        _pf.LOCAL(symbol->offset());
+        _pf.STDOUBLE();
       } else {
-        std::cerr << "UNEXPECTED INITIALIZER IN DECLARATION" << std::endl;
+        std::cerr << "UNKNOWN DECLARATION NODE TYPE" << std::endl;
+        return;
       }
+  } else {
+    if (symbol->is_typed(cdk::TYPE_INT) || symbol->is_typed(cdk::TYPE_DOUBLE) || symbol->is_typed(cdk::TYPE_POINTER)) {
+      _pf.DATA();
+      _pf.ALIGN();
+      _pf.LABEL(symbol->name());
+      if (symbol->is_typed(cdk::TYPE_INT)) {
+        node->accept(this, lvl);
+      } else if (symbol->is_typed(cdk::TYPE_POINTER)) {
+        node->accept(this, lvl);
+      } else if (symbol->is_typed(cdk::TYPE_DOUBLE)) {
+        if (node->is_typed(cdk::TYPE_DOUBLE)) {
+          node->accept(this, lvl);
+        }
+        else if (node->is_typed(cdk::TYPE_INT)) {
+          cdk::integer_node *dclini = dynamic_cast<cdk::integer_node*>(node);
+          cdk::double_node ddi(dclini->lineno(), dclini->value());
+          ddi.accept(this, lvl);
+        } else {
+          std::cerr << "BAD DECLARATION FOR REAL VALUE" << std::endl;
+        }
+      }
+    } else if (symbol->is_typed(cdk::TYPE_STRING)) {
+        _pf.DATA();
+        _pf.ALIGN();
+        _pf.LABEL(symbol->name());
+        node->accept(this, lvl);
+    } else if (symbol->is_typed(cdk::TYPE_FUNCTIONAL)) {
+      _fun_symbols.push_back(symbol);
+      reset_new_symbol();
+      node->accept(this, lvl);
+      _pf.DATA();
+      if (_fun_symbols.back()->qualifier() == tPUBLIC) {
+        _pf.GLOBAL(_fun_symbols.back()->name(), _pf.OBJ());
+      }
+      _pf.ALIGN();
+      _pf.LABEL(symbol->name());
+      std::string label = _fun_label;
+      _fun_label.clear();
+      _pf.SADDR(label);
+    } else {
+      std::cerr << "UNEXPECTED INITIALIZER IN DECLARATION" << std::endl;
     }
-    _symbols_to_declare.erase(symbol->name());
-    //if (_symbol->is_extern)
-    //symbol->set_initialized(true);
   }
-//}
+  _symbols_to_declare.erase(symbol->name());
+}
+  
+
   
 
 
