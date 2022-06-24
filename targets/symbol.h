@@ -12,12 +12,6 @@ namespace l22 {
     std::string _name;
     long _value; // hack!
     int _qualifier;
-  
-   // std::vector<std::shared_ptr<cdk::basic_type>> _input_types;
-   // std::shared_ptr<cdk::basic_type> _output_type;
-   // bool _initialized;
-   // bool _is_redcl;
-   // bool _is_decl;
     bool _is_extern;
     bool _is_foreign;
     bool _is_main;

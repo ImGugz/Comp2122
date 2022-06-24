@@ -32,15 +32,7 @@ namespace l22 {
     std::string _fun_label;
     std::stack<int> _whileCond, _whileEnd;
     std::set<std::string> _symbols_to_declare;
-    //std::vector<std::string> _doubt_symbols;
-    //std::string _doubt_symbol;
-
-    //bool _first_declarations;
-    //bool _possible_extern_call;
     std::string _extern_label;
-    //std::shared_ptr<l22::symbol> _symbol_to_define;
-    //std::vector<std::shared_ptr<cdk::basic_type>> _intended_ret_types;
-
 
   public:
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab,
