@@ -11,7 +11,6 @@ namespace l22 {
   class type_checker: public basic_ast_visitor {
     cdk::symbol_table<l22::symbol> &_symtab;
     basic_ast_visitor *_parent;
-    std::shared_ptr<cdk::basic_type> _inBlockReturnType = nullptr;
 
   public:
     type_checker(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab, basic_ast_visitor *parent) :

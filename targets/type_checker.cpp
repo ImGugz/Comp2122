@@ -8,21 +8,21 @@
 
 #define ASSERT_UNSPEC { if (node->type() != nullptr && !node->is_typed(cdk::TYPE_UNSPEC)) return; }
 
-static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
-  std::shared_ptr<cdk::functional_type> aux = cdk::functional_type::cast(typed_node);
-  if (aux == nullptr) {
-    return cdk::to_string(typed_node);
-  } else {
-    std::ostringstream strlit;
-    strlit << "function with output " << type_name(aux->output(0))<< " and inputs " << "(";
-    for (size_t i = 0; i < aux->input_length(); i++) {
-      strlit << type_name(aux->input(i)) << ",";
-    }
-    if (aux->input_length() > 0) strlit.seekp(-1, strlit.cur);
-    strlit << ")";
-    return strlit.str();
-  }
-}
+//static std::string type_name(std::shared_ptr<cdk::basic_type> typed_node) {
+//  std::shared_ptr<cdk::functional_type> aux = cdk::functional_type::cast(typed_node);
+//  if (aux == nullptr) {
+//    return cdk::to_string(typed_node);
+//  } else {
+//    std::ostringstream strlit;
+//    strlit << "function with output " << type_name(aux->output(0))<< " and inputs " << "(";
+//    for (size_t i = 0; i < aux->input_length(); i++) {
+//      strlit << type_name(aux->input(i)) << ",";
+//    }
+//    if (aux->input_length() > 0) strlit.seekp(-1, strlit.cur);
+//    strlit << ")";
+//    return strlit.str();
+//  }
+//}
 
 
 // NOTE: Check covariance regarding [void]
@@ -43,13 +43,13 @@ static bool compatible_function_types(std::shared_ptr<cdk::functional_type> ltyp
   if (ltype->output(0)->name() == cdk::TYPE_POINTER) {
     // NOTE: this is a little weird, but we do know that nullptr does not exist in an output type of a funtype
     if (!(rtype->output(0)->name() == cdk::TYPE_POINTER && compatible_pointed_types(ltype->output(0), rtype->output(0)))) {
-      std::cout << "Falha 1" << std::endl;
+      //std::cout << "Falha 1" << std::endl;
       return false;
     }
   } else if (ltype->output(0)->name() == cdk::TYPE_FUNCTIONAL) {
      if (!(rtype->output(0)->name() == cdk::TYPE_FUNCTIONAL && 
           compatible_function_types(cdk::functional_type::cast(ltype->output(0)), cdk::functional_type::cast(rtype->output(0))))) {
-      std::cout << "Falha 2" << std::endl;
+      //std::cout << "Falha 2" << std::endl;
       return false;
     }
     // NOTE: check for each primitive type?
@@ -58,24 +58,24 @@ static bool compatible_function_types(std::shared_ptr<cdk::functional_type> ltyp
       return false;
     }
   } else if ((ltype->output(0)->name() != rtype->output(0)->name())) {
-     std::cout << "Falha 3" << std::endl;
+     //std::cout << "Falha 3" << std::endl;
     return false;
   }
 
   if (ltype->input_length() != rtype->input_length()) {
-     std::cout << "Falha 4" << std::endl;
+     //std::cout << "Falha 4" << std::endl;
     return false;
   }
   for (size_t tx = 0; tx < ltype->input_length(); tx++) {
     if (ltype->input(tx)->name() == cdk::TYPE_POINTER) {
       if (!(rtype->input(tx)->name() == cdk::TYPE_POINTER && compatible_pointed_types(ltype->input(tx), rtype->input(tx)))) {
-         std::cout << "Falha 5" << std::endl;
+         //std::cout << "Falha 5" << std::endl;
         return false;
       }
     } else if (ltype->input(tx)->name() == cdk::TYPE_FUNCTIONAL) {
       if (!(rtype->input(tx)->name() == cdk::TYPE_FUNCTIONAL && 
           compatible_function_types(cdk::functional_type::cast(ltype->input(tx)), cdk::functional_type::cast(rtype->input(tx))))) {
-             std::cout << "Falha 6" << std::endl;
+             //std::cout << "Falha 6" << std::endl;
         return false;
       }
     } else if (rtype->input(tx)->name() == cdk::TYPE_DOUBLE) {
@@ -83,7 +83,7 @@ static bool compatible_function_types(std::shared_ptr<cdk::functional_type> ltyp
         return false;
       }
     } else if ((ltype->input(tx)->name() != rtype->input(tx)->name())) {
-       std::cout << "Falha 7" << std::endl;
+       //std::cout << "Falha 7" << std::endl;
       return false;
     }
   }
@@ -421,10 +421,11 @@ void l22::type_checker::do_assignment_node(cdk::assignment_node *const node, int
 //---------------------------------------------------------------------------
 
 void l22::type_checker::do_program_node(l22::program_node *const node, int lvl) {
-  auto mainfun = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "_main", 0, -1);
+  auto mainfun = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "_main", 0, tPRIVATE);
   auto cdkInt = cdk::primitive_type::create(4, cdk::TYPE_INT);
   std::vector<std::shared_ptr<cdk::basic_type>> input_types;
-  auto mainat = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "@", 0, -1);
+  auto mainat = l22::make_symbol(cdk::functional_type::create(cdk::primitive_type::create(4, cdk::TYPE_INT)), "@", 0, tPRIVATE);
+  mainat->set_main(true);
   if (_symtab.find_local(mainat->name())) {
     _symtab.replace(mainat->name(), mainat);
   } else {
@@ -433,7 +434,7 @@ void l22::type_checker::do_program_node(l22::program_node *const node, int lvl) 
       return;
     }
   }
-  _parent->set_new_symbol(mainat);
+  _parent->set_new_symbol(mainfun);
 }
 
 void l22::type_checker::do_block_node(l22::block_node * const node, int lvl) {
@@ -489,6 +490,9 @@ void l22::type_checker::do_function_call_node(l22::function_call_node * const no
     if (symbol == nullptr) {
       throw std::string("recursive call outside function");
     }
+    if (symbol->is_main()) {
+      throw std::string("recursive call in main function");
+    }
     input_types = cdk::functional_type::cast(symbol->type())->input()->components();
     output_type = cdk::functional_type::cast(symbol->type())->output(0);
   } else {                              // non recursive call: just check functional type
@@ -525,17 +529,17 @@ void l22::type_checker::do_function_definition_node(l22::function_definition_nod
   }
   node->type(cdk::functional_type::create(input_types, node->outputType()));
 
-  auto function = l22::make_symbol(node->type(), "@", 0, -1);
+  auto function = l22::make_symbol(node->type(), "@", 0, tPRIVATE);
   //function->set_input_types(input_types);
   //function->set_output_type(node->outputType());
-  std::cout << "Inserted local function with type " << type_name(function->type()) << std::endl;
+  //std::cout << "Inserted local function with type " << type_name(function->type()) << std::endl;
 
   // NOTE: _symtab.replace_local has a delete bug
   if (_symtab.find_local(function->name())) {
     _symtab.replace(function->name(), function);
   } else {
     if (!_symtab.insert(function->name(), function)) {
-      std::cerr << "ERROR INSERTING FUNCTION @" << std::endl;
+      //std::cerr << "ERROR INSERTING FUNCTION @" << std::endl;
       return;
     }
   }
@@ -564,11 +568,11 @@ void l22::type_checker::do_return_node(l22::return_node * const node, int lvl) {
   } else {
 
     if (node->retval()) {
-      _symtab.print_table();
+      //_symtab.print_table();
       std::shared_ptr<cdk::functional_type> rettype = cdk::functional_type::cast(symbol->type());
-      std::cout << "Aqui está o tipo de retorno: " << type_name(rettype) << std::endl;
+      //std::cout << "Aqui está o tipo de retorno: " << type_name(rettype) << std::endl;
       if (rettype->output() != nullptr && rettype->output(0)->name() == cdk::TYPE_VOID) {
-        std::cout << "RETURNING FROM " << symbol->name() << std::endl;
+        //std::cout << "RETURNING FROM " << symbol->name() << std::endl;
         throw std::string("return value specified for void function.");
       }
 
@@ -689,9 +693,9 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
           throw std::string("wrong type for initializer (pointer expected).");
         }
       } else if (node->is_typed(cdk::TYPE_FUNCTIONAL)) {  // f = function or f = nullptr
-        std::cout << "Funções compatíveis?: " << (compatible_function_types(cdk::functional_type::cast(node->type()), 
-                                      cdk::functional_type::cast(node->initializer()->type())) ? "true" : "false") << std::endl;
-        std::cout << type_name(node->type()) << " and " << type_name(node->initializer()->type()) << std::endl;
+        //std::cout << "Funções compatíveis?: " << (compatible_function_types(cdk::functional_type::cast(node->type()), 
+        //                              cdk::functional_type::cast(node->initializer()->type())) ? "true" : "false") << std::endl;
+        //std::cout << type_name(node->type()) << " and " << type_name(node->initializer()->type()) << std::endl;
         if (!((node->initializer()->is_typed(cdk::TYPE_FUNCTIONAL) && 
             compatible_function_types(cdk::functional_type::cast(node->type()), 
                                       cdk::functional_type::cast(node->initializer()->type())))
@@ -704,9 +708,9 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
       }
 
     } else {
-      std::cout << "A fazer uma declaração" << std::endl;
+      //std::cout << "A fazer uma declaração" << std::endl;
       node->type(node->initializer()->type());
-      std::cout << "Ficou com tipo " << type_name(node->type()) << std::endl;
+      //std::cout << "Ficou com tipo " << type_name(node->type()) << std::endl;
     }
 
   }
@@ -718,7 +722,7 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
     id = node->identifier();
   }
 
-  std::cout << "INSERTING " << id << " WITH QUALIFIER PUBLIC: " << (node->qualifier() == tPUBLIC) << std::endl;
+  //std::cout << "INSERTING " << id << " WITH QUALIFIER PUBLIC: " << (node->qualifier() == tPUBLIC) << std::endl;
   auto symbol = l22::make_symbol(node->type(), id, (bool)node->initializer(), node->qualifier());
   std::shared_ptr<l22::symbol> previous = _symtab.find_local(symbol->name());
   //_symtab.print_table();
@@ -746,7 +750,7 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
        
     } else if (previous->type()->name() == symbol->type()->name()) {
         _symtab.replace(symbol->name(), symbol);
-         std::cout << "Redeclaração de primitivo!" << std::endl;
+        // std::cout << "Redeclaração de primitivo!" << std::endl;
         //if (previous->is_decl()) {  
         //  std::cout << "Redeclaração de primitivo!" << std::endl;
         //  symbol->set_decl(true);
@@ -758,12 +762,12 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
     }
   } else {
     _symtab.insert(id, symbol);
-    std::cout << "Inserted symbol" << id << std::endl;
+    //std::cout << "Inserted symbol" << id << std::endl;
   } 
 
   _parent->set_new_symbol(symbol);
-  std::cout << "After seeing new symbol in type checker: " << std::endl;
-  _symtab.print_table();
+  //std::cout << "After seeing new symbol in type checker: " << std::endl;
+  //_symtab.print_table();
 
   if (node->qualifier() == tFOREIGN) {
     symbol->set_foreign(true);

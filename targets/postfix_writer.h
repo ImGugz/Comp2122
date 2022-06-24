@@ -31,11 +31,11 @@ namespace l22 {
     int _offset;
     std::string _fun_label;
     std::stack<int> _whileCond, _whileEnd;
-    std::vector<std::set<std::string>> _symbols_to_declare;
-    std::vector<std::string> _doubt_symbols;
-    std::string _doubt_symbol;
+    std::set<std::string> _symbols_to_declare;
+    //std::vector<std::string> _doubt_symbols;
+    //std::string _doubt_symbol;
 
-    bool _first_declarations;
+    //bool _first_declarations;
     //bool _possible_extern_call;
     std::string _extern_label;
     //std::shared_ptr<l22::symbol> _symbol_to_define;
@@ -46,7 +46,7 @@ namespace l22 {
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<l22::symbol> &symtab,
                    cdk::basic_postfix_emitter &pf) :
         basic_ast_visitor(compiler), _symtab(symtab), _pf(pf), _lbl(0),
-        _inFunctionBody(false), _inFunctionArgs(false), _returnSeen(false),  _offset(0), _first_declarations(true) {
+        _inFunctionBody(false), _inFunctionArgs(false), _returnSeen(false),  _offset(0) {
     }
 
   public:
@@ -81,7 +81,7 @@ namespace l22 {
     std::string _symbols_string() {
       std::ostringstream oss;
       oss << "<";
-      for (std::string name : _symbols_to_declare.back()) {
+      for (std::string name : _symbols_to_declare) {
         oss << name << ",";
       }
       oss << ">";

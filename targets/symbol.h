@@ -13,20 +13,21 @@ namespace l22 {
     long _value; // hack!
     int _qualifier;
   
-    std::vector<std::shared_ptr<cdk::basic_type>> _input_types;
-    std::shared_ptr<cdk::basic_type> _output_type;
-    bool _initialized;
-    bool _is_redcl;
-    bool _is_decl;
+   // std::vector<std::shared_ptr<cdk::basic_type>> _input_types;
+   // std::shared_ptr<cdk::basic_type> _output_type;
+   // bool _initialized;
+   // bool _is_redcl;
+   // bool _is_decl;
     bool _is_extern;
     bool _is_foreign;
+    bool _is_main;
 
     int _offset = 0;
 
 
   public:
     symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value, int qualifier) :
-        _type(type), _name(name), _value(value), _qualifier(qualifier), _is_extern(false), _is_foreign(false) {
+        _type(type), _name(name), _value(value), _qualifier(qualifier), _is_extern(false), _is_foreign(false), _is_main(false) {
     }
 
     virtual ~symbol() {
@@ -66,6 +67,14 @@ namespace l22 {
 
     bool is_foreign() {
       return _is_foreign;
+    }
+
+    void set_main(bool val) {
+      _is_main = true;
+    }
+
+    bool is_main() {
+      return _is_main;
     }
 
     int offset() const {

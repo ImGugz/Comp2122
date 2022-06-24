@@ -41,7 +41,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 
 %%
    {    
-        yydebug=1; set_debug(1);
+        //yydebug=1; set_debug(1);
         if (clear_blocks) {
           // std:cerr << "POPPING BLOCKS (" << indents.size() << ")" << std::endl;
           indents.pop_back();
