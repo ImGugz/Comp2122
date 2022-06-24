@@ -1,0 +1,20 @@
+<sequence_node size='1'>
+  <program_node>
+    <block_node>
+      <declarations>
+      </declarations>
+      <instructions>
+        <sequence_node size='2'>
+          <write_node newline='true'>
+            <sequence_node size='1'>
+              <string_node>ABCD</string_node>
+            </sequence_node>
+          </write_node>
+          <return_node>
+              <integer_node>0</integer_node>
+          </return_node>
+        </sequence_node>
+      </instructions>
+    </block_node>
+  </program_node>
+</sequence_node>

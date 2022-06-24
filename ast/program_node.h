@@ -9,15 +9,15 @@ namespace l22 {
    * Class for describing program nodes.
    */
   class program_node: public cdk::basic_node {
-    cdk::basic_node *_statements;
+    l22::block_node *_statements;
 
   public:
-    inline program_node(int lineno, cdk::basic_node *statements) :
+    inline program_node(int lineno, l22::block_node *statements) :
         cdk::basic_node(lineno), _statements(statements) {
     }
 
   public:
-    inline cdk::basic_node *statements() {
+    inline l22::block_node *statements() {
       return _statements;
     }
 

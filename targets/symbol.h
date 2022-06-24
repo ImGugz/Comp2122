@@ -11,10 +11,17 @@ namespace l22 {
     std::shared_ptr<cdk::basic_type> _type;
     std::string _name;
     long _value; // hack!
+    int _qualifier;
+    bool _is_extern;
+    bool _is_foreign;
+    bool _is_main;
+
+    int _offset = 0;
+
 
   public:
-    symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value) :
-        _type(type), _name(name), _value(value) {
+    symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value, int qualifier) :
+        _type(type), _name(name), _value(value), _qualifier(qualifier), _is_extern(false), _is_foreign(false), _is_main(false) {
     }
 
     virtual ~symbol() {
@@ -36,7 +43,52 @@ namespace l22 {
     long value(long v) {
       return _value = v;
     }
+    int qualifier() {
+      return _qualifier;
+    }
+
+    void set_extern(bool val) {
+      _is_extern = true;
+    }
+
+    bool is_extern() {
+      return _is_extern;
+    }
+
+    void set_foreign(bool val) {
+      _is_foreign = true;
+    }
+
+    bool is_foreign() {
+      return _is_foreign;
+    }
+
+    void set_main(bool val) {
+      _is_main = true;
+    }
+
+    bool is_main() {
+      return _is_main;
+    }
+
+    int offset() const {
+      return _offset;
+    }
+    
+    bool global() const {
+      return _offset == 0;
+    }
+
+    void set_offset(int offset) {
+      _offset = offset;
+    }
+
   };
+
+  inline auto make_symbol(std::shared_ptr<cdk::basic_type> type, const std::string &name, long value, int qualifier) {
+    return std::make_shared<symbol>(type, name, value, qualifier);
+  }
+
 
 } // l22
 
