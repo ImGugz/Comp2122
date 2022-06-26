@@ -731,6 +731,60 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
 
 }
 
+void l22::type_checker::do_iterate_node(l22::iterate_node * const node, int lvl) {
+
+  node->vector()->accept(this, lvl + 2);
+  if (!(node->vector()->is_typed(cdk::TYPE_POINTER))) {
+    throw "error in vector";
+  }
+
+  node->count()->accept(this, lvl + 2);
+  if (!(node->count()->is_typed(cdk::TYPE_INT))) {
+    throw "error in count";
+  }
+
+  const std::string &id = node->function();
+  std::shared_ptr<l22::symbol> symbol = _symtab.find(id);
+  std::vector<std::shared_ptr<cdk::basic_type>> inputTypes;
+
+  if (symbol != nullptr) {
+    inputTypes = cdk::functional_type::cast(symbol->type())->input()->components();
+  } else {
+    throw "undeclared function";
+  }
+
+  node->condition()->accept(this, lvl + 2);
+   if (!(node->condition()->is_typed(cdk::TYPE_INT))) {
+    throw "error in condition";
+  }
+
+  if (inputTypes.size() != 1) {
+    throw "incompatible function input type";
+  }
+
+  std::shared_ptr<cdk::basic_type> pointedType = cdk::reference_type::cast(node->vector()->type())->referenced();
+
+  if (pointedType->name() == cdk::TYPE_FUNCTIONAL) {
+    if (!(inputTypes[0]->name() == cdk::TYPE_FUNCTIONAL && compatible_function_types(cdk::functional_type::cast(pointedType), 
+      cdk::functional_type::cast(inputTypes[0])))) {
+        throw "type error";
+      }
+  } else if (pointedType->name() == cdk::TYPE_POINTER) {
+    if (!(inputTypes[0]->name() == cdk::TYPE_POINTER && compatible_pointed_types(pointedType, inputTypes[0]))) {
+        throw "type error";
+      }
+
+  } else if (inputTypes[0]->name() == cdk::TYPE_DOUBLE) {
+     if (!(pointedType->name() == cdk::TYPE_INT && pointedType->name() == cdk::TYPE_DOUBLE)) {
+        throw "type error";
+      }
+  } else if (!(pointedType->name() == inputTypes[0]->name())) {
+    throw "type error";
+  }
+
+}
+
+
 
 
 

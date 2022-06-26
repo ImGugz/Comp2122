@@ -908,6 +908,76 @@ void l22::postfix_writer::do_initializer(cdk::expression_node * const node, int 
   }
   _symbols_to_declare.erase(symbol->name());
 }
+
+void l22::postfix_writer::do_iterate_node(l22::iterate_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
+
+  // initializer
+  _pf.INT(0);
+
+  // if condition
+  std::string incrLabel = mklbl(++_lbl);
+  node->condition()->accept(this, lvl);
+  std::string endLabel = mklbl(++_lbl);
+  _pf.JZ(endLabel);
+
+  // for condition (jump if current > count)
+  std::string condLabel = mklbl(++_lbl);
+  _pf.LABEL(condLabel);
+  _pf.DUP32();
+
+  node->count()->accept(this, lvl);
+  _pf.JGE(endLabel);
+
+  // call function vector[current]
+  // index vector
+  _pf.DUP32();
+  std::shared_ptr<cdk::basic_type> pointedType = cdk::reference_type::cast(node->vector()->type())->referenced();
+  _pf.INT(pointedType->size());
+  _pf.MUL();
+  node->vector()->accept(this, lvl);
+  _pf.ADD();
+
+  if (pointedType->size() == 8) {
+    _pf.LDDOUBLE();
+  } else {
+    _pf.LDINT();
+  }
+
+  // call function
+  _extern_label.clear();
+
+  const std::string &id = node->function();
+  auto symbol = _symtab.find(id);
+ 
+  if (symbol->is_foreign()) {
+    _extern_label = symbol->name();
+  } else if (symbol->global()) {
+    _pf.ADDR(symbol->name());
+  } else {
+    _pf.LOCAL(symbol->offset());
+  }
+
+  _pf.LDINT();
+ 
+  if (!_extern_label.empty()) {
+    _pf.CALL(_extern_label);
+  } else {
+    _pf.BRANCH();
+  }
+
+  _pf.TRASH(pointedType->size());
+  _extern_label.clear();
+
+  // increment variable
+  _pf.LABEL(incrLabel);
+  _pf.INT(1);
+  _pf.ADD();
+  _pf.JMP(condLabel);
+
+  _pf.LABEL(endLabel);
+
+}
   
 
   

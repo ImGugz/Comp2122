@@ -358,3 +358,7 @@ void l22::xml_writer::do_write_node(l22::write_node * const node, int lvl) {
 void l22::xml_writer::do_identity_node(l22::identity_node * const node, int lvl) {
   do_unary_operation(node, lvl);
 }
+
+void l22::xml_writer::do_iterate_node(l22::iterate_node *const node, int lvl) {
+  // EMPTY
+}
