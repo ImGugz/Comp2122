@@ -731,6 +731,60 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
 
 }
 
+void l22::type_checker::do_sweep_node(l22::sweep_node * const node, int lvl) {
+
+  node->vector()->accept(this, lvl + 2);
+  if (!node->vector()->is_typed(cdk::TYPE_POINTER)) {
+    throw "type error in vector";
+  }
+
+  node->low()->accept(this, lvl + 2);
+  if (!node->low()->is_typed(cdk::TYPE_INT)) {
+     throw "type error in low";
+  }
+
+  node->high()->accept(this, lvl + 2);
+  if (!node->high()->is_typed(cdk::TYPE_INT)) {
+     throw "type error in high";
+  }
+
+  node->function()->accept(this, lvl + 2);
+  if (!node->function()->is_typed(cdk::TYPE_FUNCTIONAL)) {
+     throw "type error in function";
+  }
+
+  std::shared_ptr<cdk::basic_type> pointedType = cdk::reference_type::cast(node->vector()->type())->referenced();
+  std::shared_ptr<cdk::functional_type> funType = cdk::functional_type::cast(node->function()->type());
+
+  if (!(funType->input_length() == 1)) {
+     throw "mismatch in number of args";
+  }
+
+  if (funType->input(0)->name() == cdk::TYPE_FUNCTIONAL) {
+    if (!(pointedType->name() == cdk::TYPE_FUNCTIONAL && 
+          compatible_function_types(cdk::functional_type::cast(funType->input(0)), cdk::functional_type::cast(pointedType)) && 
+          funType->output(0)->name() == cdk::TYPE_FUNCTIONAL && 
+          compatible_function_types(cdk::functional_type::cast(funType->input(0)), cdk::functional_type::cast(funType->output(0))))) {
+            throw "error";
+    }
+  } else if (funType->output(0)->name() == cdk::TYPE_POINTER)  {
+    if (!(pointedType->name() == cdk::TYPE_POINTER && 
+          compatible_pointed_types(funType->input(0), pointedType) && 
+          (funType->output(0)->name() == cdk::TYPE_POINTER && 
+          compatible_pointed_types(funType->input(0), funType->output(0)))) ) {
+            throw "error";
+    }
+  } else if (!(funType->input(0)->name() == pointedType->name() && funType->output(0)->name() == pointedType->name())) {
+    throw "error";
+  }
+
+  node->condition()->accept(this, lvl + 2);
+  if (!node->condition()->is_typed(cdk::TYPE_INT)) {
+     throw "error";
+  }
+
+}
+
 
 
 

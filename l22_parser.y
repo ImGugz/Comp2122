@@ -47,6 +47,7 @@
 
 %token tIF tTHEN tELIF tELSE
 %token tWHILE tDO tSTOP tAGAIN tRETURN tWRITE tWRITELN
+%token tSWEEP tDOTS tWITH
 
 %token tINPUT tSIZEOF
 
@@ -146,6 +147,7 @@ instruction :  simple_expr                        { $$ = new l22::evaluation_nod
             |  tSTOP                              { $$ = new l22::stop_node(LINE); }
             |  tRETURN                            { $$ = new l22::return_node(LINE); }
             |  tRETURN simple_expr                { $$ = new l22::return_node(LINE, $2); }
+            |  tSWEEP expr tIOTYPES expr tDOTS expr tWITH expr tIF simple_expr { $$ = new l22::sweep_node(LINE, $2, $4, $6, $8 ,$10); }
             ;
 
 blockinstr  :  block_expr                         { $$ = new l22::evaluation_node(LINE, $1); }
@@ -156,6 +158,8 @@ blockinstr  :  block_expr                         { $$ = new l22::evaluation_nod
             |  tWHILE '(' expr ')' tDO block      { $$ = new l22::while_node(LINE, $3, $6); }
             |  tRETURN block_expr                 { $$ = new l22::return_node(LINE, $2); }
             |  block                              { $$ = $1; }
+            |  tSWEEP expr tIOTYPES expr tDOTS expr tWITH expr tIF block_expr { $$ = new l22::sweep_node(LINE, $2, $4, $6, $8 ,$10); }
+            ;
             ;
 
 

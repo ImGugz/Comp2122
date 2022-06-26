@@ -908,6 +908,102 @@ void l22::postfix_writer::do_initializer(cdk::expression_node * const node, int 
   }
   _symbols_to_declare.erase(symbol->name());
 }
+
+void l22::postfix_writer::do_sweep_node(l22::sweep_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
+  
+  // if condition
+  node->condition()->accept(this, lvl);
+  std::string endLabel = mklbl(++_lbl);
+  _pf.JZ(endLabel);
+
+  // for loop
+  // initialization
+  node->low()->accept(this, lvl);
+
+  // for condition (jump in low >= high)
+  std::string condLabel = mklbl(++_lbl);
+  _pf.ALIGN();
+  _pf.LABEL(condLabel);
+
+  _pf.DUP32();
+  node->high()->accept(this, lvl);
+
+   std::string endFor = mklbl(++_lbl);
+  _pf.JGE(endFor);
+
+  // for body
+  // function call 
+  std::shared_ptr<cdk::basic_type> referencedType = cdk::reference_type::cast(node->vector()->type())->referenced();
+  _pf.DUP32();
+  _pf.INT(referencedType->size());
+  _pf.MUL();
+  node->vector()->accept(this, lvl);
+  _pf.ADD();
+
+  if (referencedType->name() == cdk::TYPE_DOUBLE) {
+    _pf.LDDOUBLE();
+  } else {
+    _pf.LDINT();
+  }
+
+  _extern_label.clear();
+  node->function()->accept(this, lvl + 2);
+  if (!_extern_label.empty()) {
+    _pf.CALL(_extern_label);
+  } else {
+    _pf.BRANCH();
+  }
+
+  _pf.TRASH(referencedType->size());
+
+  _pf.DUP32();
+
+  // By convention, all int return types are doubles, it is the calee who must properly cast them
+  if (referencedType->name() == cdk::TYPE_DOUBLE) {
+    _pf.I2D();
+    _pf.LDFVAL64();
+    _pf.SWAP64();
+    _pf.D2I();
+  } else if (!_extern_label.empty()) {
+    _pf.LDFVAL32();
+    _pf.SWAP32();
+  } else {
+    _pf.LDFVAL64();
+    _pf.D2I();
+    _pf.SWAP32();
+  }
+
+  _pf.INT(referencedType->size());
+  _pf.MUL();
+  node->vector()->accept(this, lvl);
+  _pf.ADD();
+
+  if (referencedType->name() == cdk::TYPE_DOUBLE) {
+    _pf.STDOUBLE();
+  } else {
+    _pf.STINT();
+  }
+  _extern_label.clear();
+
+  // increment
+  std::string incrLabel = mklbl(++_lbl);
+  _pf.ALIGN();
+  _pf.LABEL(incrLabel);
+
+  _pf.INT(1);
+  _pf.ADD();
+  _pf.JMP(condLabel);
+
+  // destroy control variable
+  _pf.ALIGN();
+  _pf.LABEL(endFor);
+  _pf.TRASH(4);
+
+  // end loop
+  _pf.ALIGN();
+  _pf.LABEL(endLabel);
+}
   
 
   

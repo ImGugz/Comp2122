@@ -182,6 +182,10 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]|"_"])*
 "write"                return tWRITE;
 "writeln"              return tWRITELN;
 
+"sweep"                return tSWEEP;
+".."                   return tDOTS;
+"with"                 return tWITH;
+
   /* ====================================================================== */
   /* ====[                 7 - EXPRESSION OPERATORS                   ]==== */
   /* ====================================================================== */
