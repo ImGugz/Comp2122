@@ -731,6 +731,63 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
 
 }
 
+void l22::type_checker::do_with_node(l22::with_node * const node, int lvl) {
+  const std::string &id = node->function();
+  std::shared_ptr<l22::symbol> symbol = _symtab.find(id);
+  std::shared_ptr<cdk::functional_type> funType;
+
+  if (symbol != nullptr) {
+    if (!(symbol->is_typed(cdk::TYPE_FUNCTIONAL))) {
+       throw std::string("id is not of functional type");
+    }
+  } else {
+    throw id;
+  }
+
+  funType = cdk::functional_type::cast(symbol->type());
+  if (funType->input_length() != 1) {
+    throw std::string("incompatible number of arguments of function");
+  }
+
+  node->vector()->accept(this, lvl);
+
+  if (!node->vector()->is_typed(cdk::TYPE_POINTER)) {
+    throw std::string("wrong type in vector");
+  }
+
+  std::shared_ptr<cdk::basic_type> referencedType = cdk::reference_type::cast(node->vector()->type())->referenced();
+
+  if (funType->input(0)->name() == cdk::TYPE_FUNCTIONAL) {
+    if (!(referencedType->name() == cdk::TYPE_FUNCTIONAL && 
+        compatible_function_types(cdk::functional_type::cast(funType->input(0)), cdk::functional_type::cast(referencedType)))) {
+          throw std::string("error");
+        }
+  } else if (funType->input(0)->name() == cdk::TYPE_POINTER) {
+    if (!(referencedType->name() == cdk::TYPE_POINTER && 
+        compatible_pointed_types(funType->input(0), referencedType))) {
+          throw std::string("error");
+        }
+  } else if (funType->input(0)->name() == cdk::TYPE_DOUBLE) {
+    if (!(referencedType->name() == cdk::TYPE_INT || referencedType->name() == cdk::TYPE_DOUBLE)) {
+      throw std::string("error");
+    }
+
+  } else if (!(funType->input(0)->name() == referencedType->name())) {
+    throw std::string("error");
+  }
+
+  node->low()->accept(this, lvl + 2);
+  if (!node->low()->is_typed(cdk::TYPE_INT)) {
+    throw std::string("wrong type in low");
+  }
+
+  node->high()->accept(this, lvl + 2);
+  if (!node->high()->is_typed(cdk::TYPE_INT)) {
+    throw std::string("wrong type in high");
+  }
+  
+}
+
 
 
 

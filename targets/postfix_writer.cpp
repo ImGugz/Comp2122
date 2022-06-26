@@ -908,8 +908,81 @@ void l22::postfix_writer::do_initializer(cdk::expression_node * const node, int 
   }
   _symbols_to_declare.erase(symbol->name());
 }
+
+
+void l22::postfix_writer::do_with_node(l22::with_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
+
+  // for initialization
+  node->low()->accept(this, lvl);
+
+  // for condition (break if counter >= high)
+  std::string condLabel = mklbl(++_lbl);
+  _pf.ALIGN();
+  _pf.LABEL(condLabel);
+
+  _pf.DUP32();
+  node->high()->accept(this, lvl);
+
+  std::string endLabel = mklbl(++_lbl);
+  _pf.JGE(endLabel);
+
+  // perform instruction
+  std::shared_ptr<cdk::basic_type> referencedType = cdk::reference_type::cast(node->vector()->type())->referenced();
+
+  // index the vector
+  _pf.DUP32();
+  _pf.INT(referencedType->size());
+  _pf.MUL();
+  node->vector()->accept(this, lvl);
+  _pf.ADD();
+
+  // load vector content
+  if (referencedType->size() == 8) {
+    _pf.LDDOUBLE();
+  } else {
+    _pf.LDINT();
+  }
+
+  //perform function call
+  _extern_label.clear();
+
+  const std::string &id = node->function();
+  auto symbol = _symtab.find(id);
+  std::shared_ptr<cdk::basic_type> inputType = cdk::functional_type::cast(symbol->type())->input(0);
+
+  if (inputType->name() == cdk::TYPE_DOUBLE && referencedType->name() == cdk::TYPE_INT) {
+    _pf.I2D();
+  }
+ 
+  if (symbol->is_foreign()) {
+    _extern_label = symbol->name();
+  } else if (symbol->global()) {
+    _pf.ADDR(symbol->name());
+  } else {
+    _pf.LOCAL(symbol->offset());
+  }
+  _pf.LDINT();
+
+  if (!_extern_label.empty()) {
+    _pf.CALL(_extern_label);
+  } else {
+    _pf.BRANCH();
+  }
+ 
+  _pf.TRASH(referencedType->size());
+  _extern_label.clear();
+
+  // increment
+  std::string incrLabel = mklbl(++_lbl);
+  _pf.ALIGN();
+  _pf.LABEL(incrLabel);
+  _pf.INT(1);
+  _pf.ADD();
+
+  _pf.JMP(condLabel);
   
+  _pf.ALIGN();
+  _pf.LABEL(endLabel);
 
-  
-
-
+}
