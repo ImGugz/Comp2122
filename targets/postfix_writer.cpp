@@ -949,11 +949,6 @@ void l22::postfix_writer::do_with_node(l22::with_node * const node, int lvl) {
 
   const std::string &id = node->function();
   auto symbol = _symtab.find(id);
-  std::shared_ptr<cdk::basic_type> inputType = cdk::functional_type::cast(symbol->type())->input(0);
-
-  if (inputType->name() == cdk::TYPE_DOUBLE && referencedType->name() == cdk::TYPE_INT) {
-    _pf.I2D();
-  }
  
   if (symbol->is_foreign()) {
     _extern_label = symbol->name();
@@ -971,7 +966,32 @@ void l22::postfix_writer::do_with_node(l22::with_node * const node, int lvl) {
   }
  
   _pf.TRASH(referencedType->size());
+  _pf.DUP32();
+  
+  if (referencedType->name() == cdk::TYPE_DOUBLE) {
+    _pf.I2D();
+    _pf.LDFVAL64();
+    _pf.SWAP64();
+    _pf.D2I();
+  } else {
+    std::cout << "Aqui" << std::endl;
+    _pf.LDFVAL32();
+    _pf.SWAP32();
+  }
   _extern_label.clear();
+
+  _pf.INT(referencedType->size());
+  _pf.MUL();
+  node->vector()->accept(this, lvl);
+  _pf.ADD();
+  
+
+   if (referencedType->name() == cdk::TYPE_DOUBLE) {
+    _pf.STDOUBLE();
+  } else {
+    std::cout << "Aqui tambem" << std::endl;
+    _pf.STINT();
+  }
 
   // increment
   std::string incrLabel = mklbl(++_lbl);

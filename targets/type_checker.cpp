@@ -759,21 +759,25 @@ void l22::type_checker::do_with_node(l22::with_node * const node, int lvl) {
 
   if (funType->input(0)->name() == cdk::TYPE_FUNCTIONAL) {
     if (!(referencedType->name() == cdk::TYPE_FUNCTIONAL && 
-        compatible_function_types(cdk::functional_type::cast(funType->input(0)), cdk::functional_type::cast(referencedType)))) {
-          throw std::string("error");
+        compatible_function_types(cdk::functional_type::cast(funType->input(0)), cdk::functional_type::cast(referencedType))
+         && funType->output(0)->name() == cdk::TYPE_FUNCTIONAL &&  
+            compatible_function_types(cdk::functional_type::cast(funType->input(0)), cdk::functional_type::cast(funType->output(0))))) {
+          throw std::string("error 1");
         }
   } else if (funType->input(0)->name() == cdk::TYPE_POINTER) {
-    if (!(referencedType->name() == cdk::TYPE_POINTER && 
-        compatible_pointed_types(funType->input(0), referencedType))) {
-          throw std::string("error");
+      if (!(referencedType->name() == cdk::TYPE_POINTER && 
+        compatible_function_types(cdk::functional_type::cast(funType->input(0)), cdk::functional_type::cast(referencedType))
+         && funType->output(0)->name() == cdk::TYPE_POINTER &&  
+            compatible_function_types(cdk::functional_type::cast(funType->input(0)), cdk::functional_type::cast(funType->output(0))))) {
+          throw std::string("error 2");
         }
   } else if (funType->input(0)->name() == cdk::TYPE_DOUBLE) {
-    if (!(referencedType->name() == cdk::TYPE_INT || referencedType->name() == cdk::TYPE_DOUBLE)) {
-      throw std::string("error");
+    if (!(funType->output(0)->name() == cdk::TYPE_DOUBLE &&  referencedType->name() == cdk::TYPE_DOUBLE)) {
+      throw std::string("error 3");
     }
 
-  } else if (!(funType->input(0)->name() == referencedType->name())) {
-    throw std::string("error");
+  } else if (!(funType->input(0)->name() == referencedType->name() && funType->input(0)->name() == funType->output(0)->name())) {
+    throw std::string("error 4");
   }
 
   node->low()->accept(this, lvl + 2);
