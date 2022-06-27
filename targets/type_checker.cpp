@@ -731,6 +731,57 @@ void l22::type_checker::do_declaration_node(l22::declaration_node * const node, 
 
 }
 
+void l22::type_checker::do_unless_node(l22::unless_node * const node, int lvl) {
+  node->condition()->accept(this, lvl + 2);
+  if (!(node->condition()->is_typed(cdk::TYPE_INT))) {
+    throw std::string("bad type in condition in unless");
+  }
 
+  node->pointer()->accept(this, lvl + 2);
+  if (!(node->pointer()->is_typed(cdk::TYPE_POINTER))) {
+    throw std::string("bad type in pointer in unless");
+  }
+
+  node->count()->accept(this, lvl + 2);
+  if (!(node->count()->is_typed(cdk::TYPE_INT))) {
+    throw std::string("bad type in count in unless");
+  }
+
+  node->function()->accept(this, lvl + 2);
+  if (!(node->function()->is_typed(cdk::TYPE_FUNCTIONAL))) {
+    throw std::string("bad type in function in unless");
+  }
+
+  std::shared_ptr<cdk::basic_type> pointer = cdk::reference_type::cast(node->pointer()->type())->referenced();
+  std::shared_ptr<cdk::functional_type> function = cdk::functional_type::cast(node->function()->type());
+
+  // Verificar compatibilidade
+  if (!(function->input_length() == 1)) {
+    throw std::string("function with too many types of input");
+  }
+
+  if (function->input(0)->name() == cdk::TYPE_FUNCTIONAL) {
+    if (!(pointer->name() == cdk::TYPE_FUNCTIONAL &&
+          compatible_function_types(
+            cdk::functional_type::cast(pointer),
+            cdk::functional_type::cast(function->input(0))))) {
+      throw std::string("incompatible type in unless 1");
+    }
+  }
+
+  else if (function->input(0)->name() == cdk::TYPE_POINTER) {
+    if (!(pointer->name() == cdk::TYPE_POINTER &&
+          compatible_pointed_types(
+            pointer,
+            function->input(0)))) {
+      throw std::string("incompatible type in unless 2");
+    }
+  }
+
+  else if (!(function->input(0)->name() == pointer->name())) {
+    throw std::string("incompatible type in unless 3");
+  }
+
+}
 
 

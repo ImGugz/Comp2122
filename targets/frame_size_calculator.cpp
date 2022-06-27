@@ -155,3 +155,7 @@ void l22::frame_size_calculator::do_identity_node(l22::identity_node *const node
 void l22::frame_size_calculator::do_program_node(l22::program_node *const node, int lvl) {
   node->statements()->accept(this, lvl + 2);
 }
+
+void l22::frame_size_calculator::do_unless_node(l22::unless_node *const node, int lvl) {
+  // EMPTY
+}

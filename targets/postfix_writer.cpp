@@ -909,7 +909,66 @@ void l22::postfix_writer::do_initializer(cdk::expression_node * const node, int 
   _symbols_to_declare.erase(symbol->name());
 }
   
+void l22::postfix_writer::do_unless_node(l22::unless_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
 
+  // Initialize
+  std::string condLabel = mklbl(++_lbl);
+  std::string incrLabel = mklbl(++_lbl);
+  std::string endFor = mklbl(++_lbl);
+  std::string endLabel = mklbl(++_lbl);
+
+  // Condition to iterate
+  node->condition()->accept(this, lvl);
+  _pf.JNZ(endLabel);
+
+  // For condition
+  _pf.INT(0);
+  _pf.ALIGN();
+  _pf.LABEL(condLabel);
+  _pf.DUP32();
+  node->count()->accept(this, lvl);
+  _pf.JGE(endFor);
+
+  // Get vector[current], current in 0..count
+  std::shared_ptr<cdk::basic_type> pointer = cdk::reference_type::cast(node->pointer()->type())->referenced();
+  _pf.DUP32();
+  _pf.INT(pointer->size());
+  _pf.MUL();
+  node->pointer()->accept(this, lvl);
+  _pf.ADD();
+  if (pointer->size() == 8) {
+    _pf.LDDOUBLE();
+  } else {
+    _pf.LDINT();
+  }
+
+  // Call function
+  node->function()->accept(this, lvl);
+  if (!(_extern_label.empty())) {
+    _pf.CALL(_extern_label);
+  } else {
+    _pf.BRANCH();
+  }
+  _pf.TRASH(pointer->size());
+
+  // Increment variable
+  _pf.ALIGN();
+  _pf.LABEL(incrLabel);
+  _pf.INT(1);
+  _pf.ADD();
+  _pf.JMP(condLabel);
+
+  // End for - trash local variable
+  _pf.ALIGN();
+  _pf.LABEL(endFor);
+  _pf.TRASH(4);
+
+  // End unless
+  _pf.ALIGN();
+  _pf.LABEL(endLabel);
+
+}
   
 
 
